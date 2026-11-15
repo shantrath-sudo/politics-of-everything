@@ -369,22 +369,53 @@ def render(project_id: str = typer.Argument(...)) -> None:
 @app.command()
 def advance() -> None:
     """Run the next non-approval stages; stop at every human approval gate."""
-    for record in _store().list():
-        project_id = record["project_id"]
+    records = _store().list()
+    needs_model = any(record["stage"] in {"topic_approved", "research_ready"} for record in records)
+    service = None
+    started_here = False
+    if needs_model:
         try:
-            stage = record["stage"]
-            if stage == "topic_approved":
-                record = _research_project(project_id)
-                stage = record["stage"]
-            if stage == "research_ready":
-                record = _draft_project_script(project_id)
-                stage = record["stage"]
-            if stage == "script_approved":
-                record = _render_project(project_id)
-                stage = record["stage"]
-            typer.echo(f"{project_id}: {stage}")
+            from ai_video_factory.cli import build_inference_service
+            service = build_inference_service()
+            if service.status().status != "pass":
+                started = service.start()
+                if started.status != "pass":
+                    typer.echo(
+                        f"Local inference is not ready: {started.error or started.status}. "
+                        "No research or script stage was advanced.",
+                        err=True,
+                    )
+                    return
+                started_here = True
         except Exception as error:
-            typer.echo(f"{project_id}: PAUSED — {error}", err=True)
+            typer.echo(f"Local inference preflight failed: {error}", err=True)
+            return
+
+    try:
+        for record in records:
+            project_id = record["project_id"]
+            try:
+                stage = record["stage"]
+                if stage == "topic_approved":
+                    record = _research_project(project_id)
+                    stage = record["stage"]
+                if stage == "research_ready":
+                    record = _draft_project_script(project_id)
+                    stage = record["stage"]
+                if stage == "script_approved":
+                    record = _render_project(project_id)
+                    stage = record["stage"]
+                typer.echo(f"{project_id}: {stage}")
+            except Exception as error:
+                typer.echo(f"{project_id}: PAUSED — {error}", err=True)
+    finally:
+        if started_here and service is not None:
+            stopped = service.stop()
+            if stopped.status != "pass":
+                typer.echo(
+                    f"Warning: local inference did not stop cleanly: {stopped.error}",
+                    err=True,
+                )
 
 
 @app.command()
