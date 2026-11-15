@@ -1,0 +1,37 @@
+name: Channel workflow tests
+
+on:
+  push:
+    branches:
+      - channel/bootstrap
+  pull_request:
+    branches:
+      - main
+      - channel/bootstrap
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install project and test dependencies
+        run: uv sync --dev
+      - name: Run channel-critical tests
+        run: >-
+          uv run pytest -q
+          tests/test_channel_workflow.py
+          tests/test_longform.py
+          tests/test_duration_enforcer.py
+          tests/test_formats.py
+          tests/test_scheduler.py
