@@ -633,9 +633,24 @@ class ResearchResult:
 # ========== Source quality classification ==========
 
 _RELIABLE_DOMAINS = {
-    "nasa.gov", "nasa", "wikimedia.org", "wikipedia.org", "bbc.com", "bbc.co.uk",
-    "reuters.com", "apnews.com", "ap.org", "gov.uk", "europa.eu", "who.int",
-    "cdc.gov", "nih.gov", "mit.edu", "stanford.edu", "nature.com", "sciencedaily.com",
+    # International primary institutions and research
+    "gov.uk", "europa.eu", "who.int", "cdc.gov", "nih.gov", "mit.edu",
+    "stanford.edu", "nature.com", "sciencedirect.com", "worldbank.org",
+    "imf.org", "oecd.org", "un.org", "wto.org", "ilo.org", "unhcr.org",
+    "idea.int", "v-dem.net", "freedomhouse.org", "icj-cij.org",
+    # Established international reporting
+    "bbc.com", "bbc.co.uk", "reuters.com", "apnews.com", "ap.org",
+    "theguardian.com", "nytimes.com", "washingtonpost.com", "ft.com",
+    "economist.com", "aljazeera.com", "dw.com",
+    # Indian public institutions and research
+    "pib.gov.in", "prsindia.org", "eci.gov.in", "rbi.org.in", "mospi.gov.in",
+    "indiabudget.gov.in", "sci.gov.in", "supremecourtofindia.nic.in",
+    "legislative.gov.in", "sansad.in", "data.gov.in",
+    # Indian journalism and specialist business reporting
+    "thehindu.com", "indianexpress.com", "hindustantimes.com", "livemint.com",
+    "business-standard.com", "moneycontrol.com",
+    # General reference sources
+    "nasa.gov", "nasa", "wikimedia.org", "wikipedia.org", "sciencedaily.com",
 }
 _UNVERIFIED_DOMAINS = {"wordpress.com", "blogspot.com", "tumblr.com"}
 
