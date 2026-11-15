@@ -49,7 +49,7 @@ Commands:
     politics-channel approve-final PROJECT_ID
     politics-channel advance
 
-The advance command runs only non-approval stages and stops at every human gate. When research or writing is due, it starts the configured local model if needed and unloads it only if the automation started it. The final approval command only records editorial approval. It does not upload or publish.
+The advance command runs only non-approval stages and stops at every human gate. When research or writing is due, it starts the configured local model if needed and unloads it only if the automation started it. The Sunday delivery command assembles a private review package under data/deliveries/. It contains the final MP4 and available research, script, attribution, captions and QA artifacts. The final approval command only records editorial approval. It does not upload or publish.
 
 ### macOS scheduling
 
