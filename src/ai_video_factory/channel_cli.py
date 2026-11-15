@@ -227,6 +227,7 @@ def scout(
         )
         path = save_scout_report(candidates, DATA, on_date=selected_date)
         typer.echo(f"Saved {len(candidates)} topic leads: {path}")
+        typer.echo(f"Readable shortlist: {path.with_suffix('.md')}")
         for index, candidate in enumerate(candidates, 1):
             publishers = ", ".join(candidate.publishers[:3])
             typer.echo(
