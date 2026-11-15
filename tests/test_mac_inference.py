@@ -30,15 +30,17 @@ def test_preloaded_model_is_reused_and_not_unloaded():
 
 def test_session_loads_and_unloads_only_its_model():
     calls = []
+    posts = []
     responses = iter([
         '{"models":[{"key":"local/qwen.gguf","loaded_instances":[]}]}',
-        '{"data":[{"id":"poe-qwen35-4b"}]}',
+        '{"models":[{"key":"local/qwen.gguf","loaded_instances":[{"id":"poe-qwen35-4b"}]}]}',
     ])
     session = MacInferenceSession(
         model_key="local/qwen.gguf",
         identifier="poe-qwen35-4b",
         command_runner=_runner(calls),
         http_get=lambda _url, _timeout: next(responses),
+        http_post=lambda url, payload, _timeout: posts.append((url, payload)) or {"instance_id": payload["instance_id"]},
         memory_reader=lambda: 12.0,
         sleeper=lambda _seconds: None,
     )
@@ -57,8 +59,8 @@ def test_session_starts_server_when_loopback_is_unavailable():
     calls = []
     responses = iter([
         None,
-        '{"data":[]}',
-        '{"data":[{"id":"poe-qwen35-4b"}]}',
+        '{"models":[{"key":"local/qwen.gguf","loaded_instances":[]}]}',
+        '{"models":[{"key":"local/qwen.gguf","loaded_instances":[{"id":"poe-qwen35-4b"}]}]}',
     ])
 
     def http_get(_url, _timeout):
