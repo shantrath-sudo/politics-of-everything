@@ -328,6 +328,43 @@ def save_scout_report(candidates: list[TopicCandidate], output_dir: Path, *, on_
         "candidates": [candidate.to_dict() for candidate in candidates],
     }
     destination.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    # Human-readable companion report; JSON remains the machine-readable source.
+    lines = [
+        f"# Politics of Everything — Topic Shortlist ({report_date.isoformat()})",
+        "",
+        "> Discovery signals only. Headlines are leads, not verified facts or editorial approval.",
+        "",
+    ]
+    if not candidates:
+        lines.extend(["No candidates passed the current topic and source filters.", ""])
+    for index, candidate in enumerate(candidates, 1):
+        lines.extend([
+            f"## {index}. {candidate.title}",
+            "",
+            f"- Candidate ID: `{candidate.candidate_id}`",
+            f"- Priority score: **{candidate.score:.2f}/5**",
+            f"- Topic fit: {candidate.topic_fit:.1f}/5",
+            f"- India relevance: {candidate.india_relevance:.1f}/5",
+            f"- International relevance: {candidate.international_relevance:.1f}/5",
+            f"- Recency: {candidate.recency:.1f}/5",
+            f"- Publishers: {', '.join(candidate.publishers) or 'Not identified'}",
+            f"- Matched queries: {', '.join(candidate.queries) or 'Not recorded'}",
+            "",
+            candidate.summary or "No publisher summary was supplied.",
+            "",
+            "Sources:",
+        ])
+        lines.extend(f"- {url}" for url in (candidate.article_urls or [candidate.url]) if url)
+        lines.append("")
+    lines.extend([
+        "---",
+        "A candidate requires explicit Editor-in-Chief approval before research begins.",
+        "Use its Candidate ID with `politics-channel approve-topic CANDIDATE_ID`.",
+        "",
+    ])
+    markdown_path = destination.with_suffix(".md")
+    markdown_path.write_text("\n".join(lines), encoding="utf-8")
     return destination
 
 
