@@ -1565,6 +1565,57 @@ def _verify_longform_duration(
         )
 
 
+def _populate_commons_assets(edit: EditDocument, assets_dir: Path) -> list:
+    """Acquire one freely licensed Commons visual for scenes without media.
+
+    Only CC0, public-domain, CC-BY and CC-BY-SA assets are accepted by the
+    stock_media module. Full attribution is returned for the delivery package.
+    """
+    from ai_video_factory.stock_media import fetch_for_scene
+    from ai_video_factory.stock_providers import _derive_queries
+
+    assets: list = []
+    slots = scene_asset_slots(edit.scenes)
+    for scene in edit.scenes:
+        slot = slots.get(str(scene.id))
+        if slot is not None:
+            scene_dir = Path(assets_dir) / f"scene-{slot:02d}"
+        elif scene.kind in ("intro", "outro"):
+            scene_dir = Path(assets_dir) / f"card-{scene.kind}"
+        else:
+            continue
+        if scene.clip or scene.image:
+            continue
+        if scene_dir.is_dir() and (
+            next(scene_dir.glob("*clip*.mp4"), None)
+            or next(scene_dir.glob("*image*.*"), None)
+        ):
+            continue
+        description = (
+            getattr(scene, "visual_direction", None)
+            or scene.visual
+            or scene.title
+        )
+        queries = _derive_queries(str(description))[:1] or [str(scene.title)]
+        try:
+            found = fetch_for_scene(
+                queries,
+                scene_dir,
+                max_images=1,
+                max_clips=1,
+                max_bytes_per_file=100 * 1024 * 1024,
+            )
+        except Exception as error:  # noqa: BLE001 - one scene miss is non-fatal
+            log.warning(
+                "Wikimedia Commons asset fetch failed for %s: %s",
+                scene.id,
+                sanitize_diagnostic(error),
+            )
+            continue
+        assets.extend(found)
+    return assets
+
+
 # ========== Main Pipeline Function ==========
 
 def _resolve_run_dirs(root: Path, output_path: Path) -> tuple[Path, Path, str]:
@@ -2155,10 +2206,14 @@ def run_video_pipeline(
                 from ai_video_factory.stock_media import write_attribution_log
 
                 stock_assets = _populate_stock_clips(edit_doc, Path(assets_dir_used))
+                commons_assets = _populate_commons_assets(edit_doc, Path(assets_dir_used))
+                all_licensed_assets = [*stock_assets, *commons_assets]
                 metadata['stock_clips'] = len(stock_assets)
-                if stock_assets:
+                metadata['commons_assets'] = len(commons_assets)
+                metadata['licensed_assets'] = len(all_licensed_assets)
+                if all_licensed_assets:
                     attribution_path = write_attribution_log(
-                        stock_assets, job_dir / 'attribution.json'
+                        all_licensed_assets, job_dir / 'attribution.json'
                     )
                     artifacts['attribution'] = str(attribution_path)
             except Exception as error:  # noqa: BLE001 - best-effort; fallbacks unchanged
