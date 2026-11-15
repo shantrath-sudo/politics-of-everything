@@ -123,7 +123,7 @@ class EvidenceRecord:
 
     ``id`` ties the record to the model's grouping pass (which only *suggests* which
     records share a fact); correctness is enforced later by resolving IDs back to
-    records and requiring at least two distinct source URLs with supported labels.
+    records and requiring at least two distinct reliable source URLs with supported labels.
     """
 
     id: str
@@ -643,7 +643,12 @@ _RELIABLE_DOMAINS = {
     # Established international reporting
     "bbc.com", "bbc.co.uk", "reuters.com", "apnews.com", "ap.org",
     "theguardian.com", "nytimes.com", "washingtonpost.com", "ft.com",
-    "economist.com", "aljazeera.com", "dw.com",
+    "economist.com", "aljazeera.com", "dw.com", "politico.com", "bloomberg.com",
+    "cnbc.com", "cnn.com", "npr.org", "pbs.org", "abcnews.go.com",
+    "cbsnews.com", "nbcnews.com", "foreignaffairs.com", "foreignpolicy.com",
+    "theconversation.com", "brookings.edu", "csis.org", "cfr.org",
+    "carnegieendowment.org", "chathamhouse.org", "rand.org", "pewresearch.org",
+    "gallup.com",
     # Indian public institutions and research
     "pib.gov.in", "prsindia.org", "eci.gov.in", "rbi.org.in", "mospi.gov.in",
     "indiabudget.gov.in", "sci.gov.in", "supremecourtofindia.nic.in",
@@ -651,12 +656,19 @@ _RELIABLE_DOMAINS = {
     "mha.gov.in", "mea.gov.in", "niti.gov.in", "cag.gov.in", "mof.gov.in",
     # Indian journalism and specialist business reporting
     "thehindu.com", "indianexpress.com", "hindustantimes.com", "livemint.com",
-    "business-standard.com", "moneycontrol.com",
+    "business-standard.com", "moneycontrol.com", "thewire.in", "scroll.in",
+    "theprint.in", "ndtv.com", "indiatoday.in", "deccanherald.com",
+    "financialexpress.com", "thehindubusinessline.com", "newslaundry.com",
+    "thequint.com",
     # General reference sources
     "nasa.gov", "nasa",
 }
-_SECONDARY_DOMAINS = {"wikipedia.org", "wikimedia.org", "sciencedaily.com"}
-_UNVERIFIED_DOMAINS = {"wordpress.com", "blogspot.com", "tumblr.com"}
+_SECONDARY_DOMAINS = {"wikipedia.org", "wikimedia.org", "sciencedaily.com", "statista.com"}
+_UNVERIFIED_DOMAINS = {
+    "wordpress.com", "blogspot.com", "tumblr.com", "medium.com", "substack.com",
+    "reddit.com", "x.com", "twitter.com", "facebook.com", "tiktok.com",
+    "news.google.com", "flipboard.com",
+}
 
 
 def classify_source_quality(url: str) -> SourceQuality:
@@ -670,8 +682,10 @@ def classify_source_quality(url: str) -> SourceQuality:
     host = host.lower()
     if any(host == d or host.endswith("." + d) for d in _RELIABLE_DOMAINS):
         return "reliable"
-    if any(host == d or host.endswith("." + d) for d in _SECONDARY_DOMAINS | _UNVERIFIED_DOMAINS):
+    if any(host == d or host.endswith("." + d) for d in _SECONDARY_DOMAINS):
         return "secondary"
+    if any(host == d or host.endswith("." + d) for d in _UNVERIFIED_DOMAINS):
+        return "unverified"
     return "unverified"
 
 
@@ -1390,7 +1404,7 @@ def _build_claims_from_records(records: list[EvidenceRecord]) -> list[Claim]:
                 (m.label for m in supported),
                 key=lambda c: _CLASS_ORDER.get(c, 9),
             )
-            source_ids = supported_urls
+            source_ids = reliable_supported_urls
         else:
             # Not corroborated; keep with its strongest available label. verify_claims
             # will never promote these to verified facts.
@@ -1601,7 +1615,10 @@ def verify_claims(claims: list[Claim], contradictions: list[Contradiction]) -> l
             continue
         if claim.provisional_classification not in {"confirmed fact", "reported claim"}:
             continue
-        if len(set(claim.source_ids)) < 2:
+        reliable_sources = {
+            url for url in claim.source_ids if classify_source_quality(url) == "reliable"
+        }
+        if len(reliable_sources) < 2:
             continue
         verified.append(claim)
     return verified
