@@ -31,6 +31,7 @@ def test_status_shows_approval_paths_and_sensitive_review_flags(tmp_path, monkey
     script.parent.mkdir(parents=True, exist_ok=True)
     script.write_text("{}")
     store.transition(project_id, "script_pending", artifact=str(script))
+    project_dir = data / "projects" / project_id
     script_markdown = project_dir / "script.md"
     script_markdown.write_text("# Readable script")
     store.attach_artifact(project_id, "script_markdown", script_markdown)
