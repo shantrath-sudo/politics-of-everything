@@ -309,8 +309,14 @@ class WorkflowStore:
         current = record["stage"]
         if next_stage not in ALLOWED_TRANSITIONS.get(current, set()):
             raise ChannelWorkflowError(f"invalid workflow transition: {current} -> {next_stage}")
+        if next_stage == "script_pending" and not record["artifacts"].get("research_dossier") and not artifact:
+            raise ChannelWorkflowError("script submission requires a completed research dossier")
         if next_stage == "script_approved" and not record["artifacts"].get("script"):
             raise ChannelWorkflowError("script approval requires a saved script artifact")
+        if next_stage == "production_ready" and not artifact:
+            raise ChannelWorkflowError("production readiness requires a render and QA manifest")
+        if next_stage == "final_pending" and not record["artifacts"].get("production_manifest") and not artifact:
+            raise ChannelWorkflowError("final submission requires a completed production manifest")
         if next_stage == "final_approved" and not record["artifacts"].get("final_video"):
             raise ChannelWorkflowError("final approval requires a final video artifact")
         if artifact:
