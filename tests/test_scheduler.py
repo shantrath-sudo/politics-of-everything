@@ -39,10 +39,10 @@ def _config(**overrides):
 def test_load_channels_config_example():
     path = Path(__file__).resolve().parents[1] / "config" / "channels.toml"
     configs = load_channels_config(path)
-    assert len(configs) == 2
-    assert configs[0].slug == "deep-space-diaries"
-    assert configs[0].target_duration_minutes == 25.0
-    assert configs[1].schedule_time == "09:30"
+    assert len(configs) == 1
+    assert configs[0].slug == "politics-of-everything"
+    assert configs[0].target_duration_minutes == 12.5
+    assert configs[0].timezone == "Asia/Kolkata"
 
 
 def test_load_channels_config_missing(tmp_path):
@@ -53,8 +53,8 @@ def test_load_channels_config_missing(tmp_path):
 def test_channel_config_validation():
     with pytest.raises(SchedulerError, match="privacy"):
         _config(privacy="everyone")
-    with pytest.raises(SchedulerError, match="20-30"):
-        _config(target_duration_minutes=10.0)
+    with pytest.raises(SchedulerError, match="10-15"):
+        _config(target_duration_minutes=9.0)
     with pytest.raises(SchedulerError, match="schedule_time"):
         _config(schedule_time="25:99")
     with pytest.raises(SchedulerError, match="timezone"):
