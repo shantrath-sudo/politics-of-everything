@@ -30,7 +30,7 @@ from ai_video_factory.research_pipeline import (
 def test_classify_source_quality() -> None:
     assert classify_source_quality("https://prsindia.org/report") == "reliable"
     assert classify_source_quality("https://en.wikipedia.org/wiki/X") == "secondary"
-    assert classify_source_quality("https://blog.wordpress.com/post") == "secondary"
+    assert classify_source_quality("https://blog.wordpress.com/post") == "unverified"
     assert classify_source_quality("https://example.com/x") == "unverified"
 
 
@@ -96,7 +96,7 @@ def test_flag_sensitive_topic() -> None:
 
 
 def test_run_research_end_to_end(tmp_path: Path) -> None:
-    sources = ["https://nasa.gov/image", "https://reddit.com/r/tech/comments/x"]
+    sources = ["https://nasa.gov/image", "https://www.reuters.com/world/example"]
 
     def extractor(topic: str, src: list) -> list[tuple[str, str]]:
         return [
@@ -351,3 +351,28 @@ def test_clean_excerpt_understands_democracy_synonyms():
     )
     excerpt = _clean_excerpt(content, "Who controls democracy?", max_chars=500)
     assert "Democratic institutions" in excerpt.text
+
+
+
+def test_verify_claims_requires_two_reliable_independent_domains():
+    from ai_video_factory.research_pipeline import Claim
+
+    same_publisher = Claim(
+        "claim-01",
+        "The parliament passed the bill.",
+        ["https://www.reuters.com/a", "https://reuters.com/b"],
+        "confirmed fact",
+    )
+    unverified = Claim(
+        "claim-02",
+        "The parliament passed the bill.",
+        ["https://example.com/a", "https://reddit.com/b"],
+        "confirmed fact",
+    )
+    independent = Claim(
+        "claim-03",
+        "The parliament passed the bill.",
+        ["https://www.reuters.com/a", "https://prsindia.org/b"],
+        "confirmed fact",
+    )
+    assert verify_claims([same_publisher, unverified, independent], []) == [independent]
