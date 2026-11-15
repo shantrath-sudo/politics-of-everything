@@ -40,6 +40,7 @@ jobs:
         run: >-
           uv run pytest -q
           tests/test_channel_workflow.py
+          tests/test_channel_cli.py
           tests/test_channel_delivery.py
           tests/test_channel_theme.py
           tests/test_mac_inference.py
