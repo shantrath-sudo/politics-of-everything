@@ -1,0 +1,17 @@
+# First documentary topic already approved in the channel setup.
+title = "Who Really Controls a Democracy?"
+candidate_id = "pilot-democracy"
+summary = "An evidence-led documentary explaining how power is actually distributed in democratic systems: elected representatives, parties, legislatures, courts, public agencies, organised interests, money, media and citizens. It must distinguish formal constitutional authority from informal influence and avoid conspiratorial claims of a single hidden controller."
+research_queries = [
+  "democracy institutions checks and balances who holds political power",
+  "lobbying campaign finance money political influence democratic accountability",
+  "India parliament courts election commission democratic institutions accountability",
+  "political parties bureaucracy media citizens influence public policy democracy",
+]
+topic_terms = [
+  "democracy", "democratic", "institution", "institutions", "power",
+  "lobby", "lobbying", "influence", "accountability", "parliament",
+  "court", "courts", "election", "governance", "political", "citizen",
+]
+max_sources = 8
+minimum_reliable_domains = 2
