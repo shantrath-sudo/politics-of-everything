@@ -64,7 +64,7 @@ def _load_kokoro() -> Any:
     """Load (and cache) the Kokoro ONNX model + voice weights."""
     import kokoro_onnx  # local import; only needed when Kokoro is used
 
-    key = f"{_KOKORO_VOICES}|{_KOKORO_VOICES}"
+    key = f"{_KOKORO_MODEL}|{_KOKORO_VOICES}"
     if key not in _kokoro_model_cache:
         model = kokoro_onnx.Kokoro(str(_KOKORO_MODEL), str(_KOKORO_VOICES))
         _kokoro_model_cache[key] = model
