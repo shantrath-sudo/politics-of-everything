@@ -85,3 +85,33 @@ def test_model_check_loads_calls_local_model_and_unloads(tmp_path, monkeypatch):
     assert result.exit_code == 0, result.output
     assert "Local model smoke test passed" in result.output
     assert session.stopped is True
+
+
+
+def test_script_markdown_renderer_creates_readable_chapters_and_sources():
+    payload = {
+        "title": "Who Really Controls a Democracy?",
+        "topic": "Democratic institutions and power",
+        "description": "An evidence-led documentary.",
+        "estimated_minutes": 12.5,
+        "target_minutes": 12.5,
+        "total_words": 1875,
+        "beats": [{
+            "key": "opening",
+            "label": "The question of power",
+            "words": 100,
+            "scenes": [{
+                "title": "The ballot box",
+                "narration": "Elections choose representatives, but do not explain every source of power.",
+                "visual_direction": "A parliamentary chamber and a simple institutional diagram.",
+                "lower_third": "Who holds power?",
+            }],
+        }],
+        "sources": ["https://www.idea.int/example", "https://prsindia.org/example"],
+    }
+    markdown = channel_cli._render_script_markdown(json.dumps(payload))
+    assert "# Who Really Controls a Democracy?" in markdown
+    assert "## The question of power" in markdown
+    assert "The ballot box" in markdown
+    assert "Visual direction" in markdown
+    assert "https://www.idea.int/example" in markdown
