@@ -143,4 +143,5 @@ def test_scout_queries_both_india_and_international_editions():
     )
     assert candidates
     assert any("hl=en-IN" in url and "gl=IN" in url for url in requested)
+    assert any("hl=en-GB" in url and "gl=GB" in url for url in requested)
     assert any("hl=en-US" in url and "gl=US" in url for url in requested)
