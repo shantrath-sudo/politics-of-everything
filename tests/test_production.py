@@ -375,7 +375,7 @@ def test_build_scene_plan_runtime_stays_within_long_form_band():
     """Regression: narration that overshoots each scene's word target must be capped so
     total runtime stays within [MIN_RUNTIME, MAX_RUNTIME] rather than exceeding it."""
     from ai_video_factory.production import (
-        build_scene_plan, synthesize_and_time, enforce_runtime, OfflineRenderEngine,
+        build_scene_plan, synthesize_and_time, fit_to_budget, enforce_runtime, OfflineRenderEngine,
         MIN_RUNTIME_SECONDS, MAX_RUNTIME_SECONDS, _BOOKEND_SECONDS,
     )
     # Source has far more words than each scene's share, so the per-scene "append one
