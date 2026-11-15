@@ -314,8 +314,12 @@ class WorkflowStore:
         if next_stage == "final_approved" and not record["artifacts"].get("final_video"):
             raise ChannelWorkflowError("final approval requires a final video artifact")
         if artifact:
-            if next_stage == "script_pending":
+            if next_stage == "research_ready":
+                record["artifacts"]["research_dossier"] = artifact
+            elif next_stage == "script_pending":
                 record["artifacts"]["script"] = artifact
+            elif next_stage == "production_ready":
+                record["artifacts"]["production_manifest"] = artifact
             elif next_stage == "final_pending":
                 record["artifacts"]["final_video"] = artifact
         record["stage"] = next_stage
