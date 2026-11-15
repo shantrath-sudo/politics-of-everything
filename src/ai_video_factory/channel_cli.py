@@ -157,6 +157,13 @@ def _render_project(project_id: str) -> dict:
     if record["stage"] != "script_approved":
         raise ChannelWorkflowError(f"{project_id}: rendering requires script_approved, got {record['stage']}")
     candidate = record["topic"]
+    resources = tomllib.loads((ROOT / "config" / "resources.toml").read_text(encoding="utf-8"))
+    free_gib = shutil.disk_usage(ROOT).free / (1024**3)
+    minimum_free_gib = float(resources.get("minimum_free_disk_gib", 12))
+    if free_gib < minimum_free_gib:
+        raise ChannelWorkflowError(
+            f"render paused: only {free_gib:.1f} GiB free; at least {minimum_free_gib:.1f} GiB is required"
+        )
     script_path = Path(record["artifacts"]["script"])
     script_data = json.loads(script_path.read_text(encoding="utf-8"))
     from ai_video_factory.theme import resolve_theme
@@ -514,7 +521,9 @@ def deliver(
 
 @app.command()
 def status() -> None:
-    """Show current projects and the latest scouting report."""
+    """Show current projects, disk headroom and the latest scouting report."""
+    free_gib = shutil.disk_usage(ROOT).free / (1024**3)
+    typer.echo(f"Free disk space: {free_gib:.1f} GiB")
     records = _store().list()
     if not records:
         typer.echo("No documentary projects have been selected.")
