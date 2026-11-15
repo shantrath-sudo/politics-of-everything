@@ -245,7 +245,7 @@ def approve_topic(
     report_date: str = typer.Option(None, "--date", help="Scouting report date YYYY-MM-DD"),
 ) -> None:
     """Select a topic and create a project after explicit Editor-in-Chief approval."""
-    selected_date = date.fromisoformat(report_date) if report_date else date.today()
+    selected_date = date.fromisoformat(report_date) if report_date else _today()
     report = DATA / "scouting" / f"{selected_date.isoformat()}.json"
     if not report.is_file():
         raise typer.BadParameter(f"scouting report not found: {report}")
