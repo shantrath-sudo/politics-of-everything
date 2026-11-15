@@ -84,6 +84,7 @@ class MacInferenceSession:
         self.minimum_available_memory_gib = minimum_available_memory_gib
         self.lms_binary = lms_binary
         self.base_url = base_url.rstrip("/")
+        self.server_root = f"{parsed_endpoint.scheme}://{parsed_endpoint.netloc}"
         self.command_runner = command_runner
         self.http_get = http_get
         self.memory_reader = memory_reader
@@ -129,17 +130,23 @@ class MacInferenceSession:
 
     def _models(self) -> list[str] | None:
         try:
-            payload = json.loads(self.http_get(f"{self.base_url}/models", 5.0))
+            payload = json.loads(self.http_get(f"{self.server_root}/api/v1/models", 5.0))
         except (OSError, URLError, TimeoutError, ValueError, MacInferenceError):
             return None
-        data = payload.get("data")
-        if not isinstance(data, list):
+        models = payload.get("models")
+        if not isinstance(models, list):
             return None
-        return [
-            str(item["id"])
-            for item in data
-            if isinstance(item, dict) and isinstance(item.get("id"), str)
-        ]
+        loaded_ids: list[str] = []
+        for model in models:
+            if not isinstance(model, dict):
+                continue
+            instances = model.get("loaded_instances", [])
+            if not isinstance(instances, list):
+                continue
+            for instance in instances:
+                if isinstance(instance, dict) and isinstance(instance.get("id"), str):
+                    loaded_ids.append(instance["id"])
+        return loaded_ids
 
     def _wait_for_server(self) -> list[str]:
         deadline = time.monotonic() + min(self.ready_timeout_seconds, 45.0)
@@ -176,7 +183,6 @@ class MacInferenceSession:
             "--context-length", str(self.context_length),
             "--ttl", str(self.ttl_seconds),
             "--identifier", self.identifier,
-            "-y",
         ], timeout=self.ready_timeout_seconds)
 
         deadline = time.monotonic() + self.ready_timeout_seconds
