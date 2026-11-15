@@ -57,6 +57,7 @@ GENERIC_THEME = ThemeConfig(
         "the", "a", "an", "of", "and", "or", "in", "on", "for", "with",
         "into", "from", "by", "at", "is", "are", "was", "were", "how",
         "that", "this", "our", "their", "its", "your", "as", "to", "be",
+        "who", "what", "when", "where", "why", "does", "do", "can", "will",
     ],
 )
 
@@ -64,10 +65,10 @@ GENERIC_THEME = ThemeConfig(
 POLITICS_THEME = ThemeConfig(
     name="politics-of-everything",
     channel_name="Politics of Everything",
-    outro_caption="Power is everywhere. Understand how it works.",
+    outro_caption="Understand the systems behind the headlines.",
     thumbnail_power_words=[
-        "power", "control", "democracy", "who decides", "the system",
-        "behind the scenes", "hidden influence", "the real story",
+        "power", "control", "who decides", "who benefits", "the system",
+        "influence", "money", "democracy", "hidden rules", "who holds power",
     ],
     nasa_stop_words=[
         "the", "a", "an", "of", "and", "or", "in", "on", "for", "with",
