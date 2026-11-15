@@ -22,6 +22,7 @@ Read CHANNEL.md, EDITORIAL_CONSTITUTION.md, PRODUCTION_PLAN.md, and docs/DECISIO
 
 The politics-channel command searches public Google News RSS feeds in India, UK and US editions across the channel's five fixed research themes. It clusters related headlines, resolves publisher URLs and scores candidates. It requires no API key and makes no paid API calls.
 
+    politics-channel start-pilot
     politics-channel scout
     politics-channel status
 
