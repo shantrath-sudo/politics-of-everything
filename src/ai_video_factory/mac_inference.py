@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 from urllib.error import URLError
 from urllib.parse import urlsplit
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 
 class MacInferenceError(RuntimeError):
@@ -24,6 +24,7 @@ class MacInferenceError(RuntimeError):
 
 CommandRunner = Callable[..., Any]
 HttpGet = Callable[[str, float], str]
+HttpPost = Callable[[str, dict[str, object], float], dict[str, Any]]
 MemoryReader = Callable[[], float]
 Sleeper = Callable[[float], None]
 
@@ -43,6 +44,19 @@ def _http_get(url: str, timeout: float) -> str:
         return response.read(2 * 1024 * 1024).decode("utf-8", errors="replace")
 
 
+def _http_post(url: str, payload: dict[str, object], timeout: float) -> dict[str, Any]:
+    request = Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urlopen(request, timeout=timeout) as response:
+        if response.status not in {200, 201}:
+            raise MacInferenceError(f"LM Studio returned HTTP {response.status}")
+        return json.loads(response.read(2 * 1024 * 1024).decode("utf-8", errors="replace"))
+
+
 class MacInferenceSession:
     """Manage one local LM Studio model without touching other loaded models."""
 
@@ -59,6 +73,7 @@ class MacInferenceSession:
         base_url: str = "http://127.0.0.1:1234/v1",
         command_runner: CommandRunner = subprocess.run,
         http_get: HttpGet = _http_get,
+        http_post: HttpPost = _http_post,
         memory_reader: MemoryReader = _available_memory_gib,
         sleeper: Sleeper = time.sleep,
         ready_timeout_seconds: float = 600.0,
@@ -87,6 +102,7 @@ class MacInferenceSession:
         self.server_root = f"{parsed_endpoint.scheme}://{parsed_endpoint.netloc}"
         self.command_runner = command_runner
         self.http_get = http_get
+        self.http_post = http_post
         self.memory_reader = memory_reader
         self.sleeper = sleeper
         self.ready_timeout_seconds = ready_timeout_seconds
@@ -201,7 +217,11 @@ class MacInferenceSession:
 
     def stop(self) -> None:
         if self.started_model:
-            self._run(["unload", self.api_model_id or self.identifier], timeout=120.0)
+            self.http_post(
+                f"{self.server_root}/api/v1/models/unload",
+                {"instance_id": self.api_model_id or self.identifier},
+                120.0,
+            )
             self.started_model = False
 
     def __enter__(self) -> str:
