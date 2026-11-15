@@ -1616,7 +1616,7 @@ def verify_claims(claims: list[Claim], contradictions: list[Contradiction]) -> l
 
     A claim is verified when it (1) is a confirmed fact or reported claim, (2) is
     not involved in an unresolved contradiction, and (3) is independently
-    corroborated by at least two distinct sources. Estimates/opinions/speculation
+    corroborated by at least two distinct reliable publisher domains. Estimates/opinions/speculation
     are never promoted (they carry uncertainty for the writer). Corroboration via
     source count prevents reporting a single-source statement as a verified fact.
     """
