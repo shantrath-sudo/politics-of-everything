@@ -167,7 +167,7 @@ class MacInferenceSession:
 
         models = self._models()
         if models is None:
-            self._run(["server", "start", "--port", "1234", "--bind", "127.0.0.1"])
+            self._run(["server", "start", "--port", "1234"])
             models = self._wait_for_server()
 
         if self.identifier in models:
