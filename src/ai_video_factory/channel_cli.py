@@ -5,6 +5,7 @@ import json
 import tomllib
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import typer
@@ -62,9 +63,9 @@ def _research_project(project_id: str) -> dict:
         raise ChannelWorkflowError(f"{project_id}: research requires topic_approved, got {record['stage']}")
     candidate = record["topic"]
     urls = list(dict.fromkeys(candidate.get("article_urls") or [candidate["url"]]))
-    publishers = set(candidate.get("publishers") or [])
-    if len(urls) < 2 or len(publishers) < 2:
-        raise ChannelWorkflowError("research requires at least two independent publisher sources")
+    publisher_hosts = {urlsplit(url).hostname for url in urls if urlsplit(url).hostname}
+    if len(publisher_hosts) < 2:
+        raise ChannelWorkflowError("research requires at least two independent publisher domains")
     from ai_video_factory.research_pipeline import (
         make_production_extractor,
         make_secure_http_transport,
