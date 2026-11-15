@@ -98,3 +98,12 @@ def test_session_rejects_non_loopback_endpoint():
             identifier="poe-qwen35-4b",
             base_url="http://0.0.0.0:1234/v1",
         )
+
+
+def test_session_rejects_nonstandard_loopback_paths():
+    with pytest.raises(MacInferenceError, match="loopback endpoint"):
+        MacInferenceSession(
+            model_key="local/qwen.gguf",
+            identifier="poe-qwen35-4b",
+            base_url="http://127.0.0.1:1234/v1/other",
+        )
