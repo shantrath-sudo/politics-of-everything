@@ -176,6 +176,10 @@ class MacInferenceSession:
         if self.model_key in models:
             self.api_model_id = self.model_key
             return self.api_model_id
+        if models:
+            raise MacInferenceError(
+                "another LM Studio model is already loaded; unload it or use the configured Politics of Everything model before continuing"
+            )
 
         self._run([
             "load", self.model_key,
