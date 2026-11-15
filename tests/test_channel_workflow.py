@@ -76,6 +76,7 @@ def test_scout_report_is_saved_with_discovery_disclaimer(tmp_path):
     markdown = path.with_suffix(".md").read_text()
     assert "Who controls democracy?" in markdown
     assert "Candidate ID" in markdown
+    assert "--date 2026-11-15" in markdown
 
 
 def test_workflow_requires_explicit_order_and_artifacts(tmp_path):
