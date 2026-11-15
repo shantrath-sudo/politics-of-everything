@@ -30,22 +30,23 @@ def _fake_chat_factory(targets):
     def fake_chat(messages, max_tokens):
         target = targets[calls["i"]]
         calls["i"] += 1
-        half = target // 2
+        prompt = next(
+            message["content"]
+            for message in messages
+            if "Exactly " in message["content"] and " scenes" in message["content"]
+        )
+        scene_count = int(__import__("re").search(r"Exactly (\\d+) scenes", prompt).group(1))
+        per_scene = max(45, target // scene_count)
         return json.dumps(
             {
                 "scenes": [
                     {
-                        "title": f"S{calls['i']}-1",
-                        "narration": " ".join(["word"] * half),
+                        "title": f"S{calls['i']}-{index + 1}",
+                        "narration": " ".join(["word"] * per_scene),
                         "visual_direction": "archival footage",
                         "lower_third": None,
-                    },
-                    {
-                        "title": f"S{calls['i']}-2",
-                        "narration": " ".join(["word"] * (target - half)),
-                        "visual_direction": "charts",
-                        "lower_third": None,
-                    },
+                    }
+                    for index in range(scene_count)
                 ]
             }
         )
