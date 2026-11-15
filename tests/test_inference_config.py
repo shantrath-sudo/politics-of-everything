@@ -12,15 +12,15 @@ def valid_config(**overrides: object) -> dict[str, object]:
         "backend": "lm_studio",
         "base_url": "http://127.0.0.1:1234/v1",
         "lms_binary": "lms",
-        "model_key": "qwen3.6-35b-a3b-udt-mtp",
-        "identifier": "avf-qwen36-executor",
-        "context_length": 65_536,
+        "model_key": "qwen3.5-4b-instruct",
+        "identifier": "poe-qwen35-4b",
+        "context_length": 16_384,
         "gpu": "max",
         "parallel": 1,
         "ttl_seconds": 3_600,
-        "minimum_available_memory_gib": 40,
-        "models_directory": "/home/summit/.lmstudio/models",
-        "server_config_path": "/home/summit/.lmstudio/.internal/http-server-config.json",
+        "minimum_available_memory_gib": 8,
+        "models_directory": "~/.lmstudio/models",
+        "server_config_path": "~/.lmstudio/.internal/http-server-config.json",
     }
     config.update(overrides)
     return config
@@ -37,16 +37,16 @@ def test_loads_checked_in_lm_studio_configuration(project_root: Path) -> None:
     assert config.backend == "lm_studio"
     assert config.base_url == "http://127.0.0.1:1234/v1"
     assert config.lms_binary == "lms"
-    assert config.model_key == "qwen3.6-35b-a3b-udt-mtp"
-    assert config.identifier == "avf-qwen36-executor"
-    assert config.context_length == 65_536
+    assert config.model_key == "qwen3.5-4b-instruct"
+    assert config.identifier == "poe-qwen35-4b"
+    assert config.context_length == 16_384
     assert config.gpu == "max"
     assert config.parallel == 1
     assert config.ttl_seconds == 3_600
-    assert config.minimum_available_memory_gib == 40
-    assert config.models_directory == "/home/summit/.lmstudio/models"
+    assert config.minimum_available_memory_gib == 8
+    assert config.models_directory == "~/.lmstudio/models"
     assert config.server_config_path == (
-        "/home/summit/.lmstudio/.internal/http-server-config.json"
+        "~/.lmstudio/.internal/http-server-config.json"
     )
 
 
