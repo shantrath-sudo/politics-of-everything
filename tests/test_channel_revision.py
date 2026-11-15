@@ -45,6 +45,9 @@ def test_final_video_rejection_reopens_script_and_invalidates_old_render(tmp_pat
     assert "production_manifest" not in record["artifacts"]
     assert "final_video" not in record["artifacts"]
     assert record["revision_count"] == 1
+    previous = record["revision_requests"][0]["previous_artifacts"]
+    assert previous["final_video"] == "/tmp/final.mp4"
+    assert previous["production_manifest"] == "/tmp/production-manifest.json"
 
 
 def test_revision_requires_feedback_and_an_approval_stage(tmp_path):
