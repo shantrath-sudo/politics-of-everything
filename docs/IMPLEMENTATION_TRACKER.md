@@ -23,7 +23,7 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 17 | Operational activation | PENDING | Requires local setup, full rehearsal and explicit user go-ahead; publishing remains disabled |
 
 ## Verified CI
-The channel-critical workflow passed: 100 tests passed on the latest recorded run. It includes topic discovery/workflow, long-form duration, format, scheduler and inference configuration/service tests, plus Python compilation and CLI help smoke test. It does not prove a live Mac render or real-source research run.
+The channel-critical workflow passed: 107 tests passed on the latest recorded run. It includes topic discovery/workflow, long-form duration, format, scheduler and inference configuration/service tests, plus Python compilation and CLI help smoke test. It does not prove a live Mac render or real-source research run.
 
 ## Fixed configuration
 - Channel: Politics of Everything
