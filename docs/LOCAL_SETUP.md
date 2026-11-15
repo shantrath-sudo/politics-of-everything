@@ -27,6 +27,12 @@ Skip any package that is already installed. Install LM Studio separately from it
 
 LM Studio's CLI is distributed with the desktop app. Its documented bootstrap and local model commands are at https://lmstudio.ai/docs/cli.
 
+**Simplest setup:** after installing LM Studio and bootstrapping `lms`, run this one command from the cloned repository:
+
+    zsh scripts/bootstrap_mac.sh
+
+It installs missing Homebrew tools, the configured local model, Kokoro narration, Remotion dependencies, runs a real model-completion check, and installs the three launchd jobs. The component-by-component instructions below are for manual setup or troubleshooting; do not repeat those installation commands if the bootstrap completed successfully.
+
 ## 2. Install the local language model
 
 The configured model is the LM Studio Community Qwen3.5 4B GGUF, Q4_K_M quantization (about 2.71 GB). It is text-only for this workflow; do not download the optional image projector.
