@@ -398,11 +398,18 @@ def submit_script(
     script: str = typer.Argument(..., help="Path to complete documentary script"),
 ) -> None:
     """Submit a script for human approval."""
-    path = _project_path(script, (".md", ".txt", ".json"))
     try:
+        path = _project_path(script, (".json",))
+        script_json = Path(path).read_text(encoding="utf-8")
+        payload = json.loads(script_json)
+        if not isinstance(payload, dict) or not payload.get("beats"):
+            raise ChannelWorkflowError("submitted script JSON must contain a non-empty beats array")
+        markdown_path = _project_dir(project_id) / "script-manual.md"
+        markdown_path.write_text(_render_script_markdown(script_json), encoding="utf-8")
         record = _store().transition(project_id, "script_pending", artifact=path)
+        record = _store().attach_artifact(project_id, "script_markdown", markdown_path)
         typer.echo(f"Script submitted for review: {project_id} ({record['stage']})")
-    except ChannelWorkflowError as error:
+    except (ChannelWorkflowError, typer.BadParameter, OSError, json.JSONDecodeError) as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(code=2)
 
@@ -426,6 +433,14 @@ def request_revision(
 def approve_script(project_id: str = typer.Argument(...)) -> None:
     """Approve a submitted script; required before rendering."""
     try:
+        current = _store().get(project_id)
+        artifacts = current.get("artifacts") or {}
+        script_path = Path(artifacts.get("script", ""))
+        markdown_path = Path(artifacts.get("script_markdown", ""))
+        if not script_path.is_file() or not markdown_path.is_file():
+            raise ChannelWorkflowError(
+                "script approval requires both JSON and readable Markdown script files"
+            )
         record = _store().transition(project_id, "script_approved")
         typer.echo(f"Script approved: {project_id}")
         typer.echo(f"Next stage: {record['stage']}")
