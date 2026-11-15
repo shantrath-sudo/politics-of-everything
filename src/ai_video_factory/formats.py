@@ -197,7 +197,7 @@ _register(
         key="history_reconstruction",
         label="AI History Reconstruction",
         tier=2,
-        target_minutes=(15.0, 25.0),
+        target_minutes=(10.0, 15.0),
         description=(
             "'24 Hours in...' and 'What Did X Look Like?' series formats. "
             "AI reconstruction imagery is the native visual identity."
@@ -427,7 +427,7 @@ _register(
         key="science_doc",
         label="Cinematic Science Documentary (upgraded lane)",
         tier=2,
-        target_minutes=(20.0, 30.0),
+        target_minutes=(10.0, 15.0),
         description=(
             "The existing space/science lane, upgraded with hook engineering, "
             "question-debt chaptering, pacing discipline, and better assets."
