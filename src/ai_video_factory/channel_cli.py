@@ -53,11 +53,28 @@ def _today() -> date:
     return datetime.now(ZoneInfo("Asia/Kolkata")).date()
 
 
+def _new_inference_session():
+    from ai_video_factory.inference_config import load_inference_config
+    from ai_video_factory.mac_inference import MacInferenceSession
+
+    config = load_inference_config(ROOT / "config" / "inference.toml")
+    return MacInferenceSession(
+        model_key=config.model_key,
+        identifier=config.identifier,
+        context_length=config.context_length,
+        gpu=config.gpu,
+        ttl_seconds=config.ttl_seconds,
+        minimum_available_memory_gib=config.minimum_available_memory_gib,
+        lms_binary=config.lms_binary,
+        base_url=config.base_url,
+    )
+
+
 def _project_dir(project_id: str) -> Path:
     return DATA / "projects" / project_id
 
 
-def _research_project(project_id: str) -> dict:
+def _research_project(project_id: str, model_id: str) -> dict:
     record = _store().get(project_id)
     if record["stage"] != "topic_approved":
         raise ChannelWorkflowError(f"{project_id}: research requires topic_approved, got {record['stage']}")
@@ -75,7 +92,7 @@ def _research_project(project_id: str) -> dict:
     )
     inference = tomllib.loads((ROOT / "config" / "inference.toml").read_text(encoding="utf-8"))
     endpoint = inference["base_url"].rstrip("/") + "/chat/completions"
-    extractor = make_production_extractor(endpoint_url=endpoint, model_name=inference["model_key"])
+    extractor = make_production_extractor(endpoint_url=endpoint, model_name=model_id)
     result = run_research(
         candidate["title"], urls[:8],
         production_extractor=extractor,
@@ -105,14 +122,15 @@ def _research_project(project_id: str) -> dict:
     return _store().transition(project_id, "research_ready", artifact=str(paths["research_brief"]))
 
 
-def _draft_project_script(project_id: str) -> dict:
+def _draft_project_script(project_id: str, model_id: str) -> dict:
     record = _store().get(project_id)
     if record["stage"] != "research_ready":
         raise ChannelWorkflowError(f"{project_id}: script drafting requires research_ready, got {record['stage']}")
     candidate = record["topic"]
     research_brief = Path(record["artifacts"]["research_dossier"]).read_text(encoding="utf-8")
     urls = list(dict.fromkeys(candidate.get("article_urls") or [candidate["url"]]))
-    from ai_video_factory.longform import generate_longform_script, check_topic_adherence
+    from ai_video_factory.longform import generate_longform_script, check_topic_adherence, _lm_studio_chat
+    chat_fn = lambda messages, max_tokens: _lm_studio_chat(messages, max_tokens, model=model_id)
     script = generate_longform_script(
         topic=candidate["title"],
         description=candidate.get("summary") or candidate["title"],
@@ -123,8 +141,9 @@ def _draft_project_script(project_id: str) -> dict:
         sources=urls,
         format_key="systems_explainer",
         verify_source_urls=True,
+        chat_fn=chat_fn,
     )
-    check_topic_adherence(script)
+    check_topic_adherence(script, chat=chat_fn)
     project_dir = _project_dir(project_id)
     project_dir.mkdir(parents=True, exist_ok=True)
     script_path = project_dir / "script.json"
@@ -332,7 +351,8 @@ def approve_final(project_id: str = typer.Argument(...)) -> None:
 def research(project_id: str = typer.Argument(...)) -> None:
     """Run source collection and evidence-backed claim extraction for an approved topic."""
     try:
-        record = _research_project(project_id)
+        with _new_inference_session() as model_id:
+            record = _research_project(project_id, model_id)
         typer.echo(f"Research dossier complete: {project_id}")
         typer.echo(f"Stage: {record['stage']}")
         typer.echo(f"Dossier: {record['artifacts']['research_dossier']}")
@@ -345,7 +365,8 @@ def research(project_id: str = typer.Argument(...)) -> None:
 def draft_script(project_id: str = typer.Argument(...)) -> None:
     """Generate a sourced 10–15 minute script and submit it for human approval."""
     try:
-        record = _draft_project_script(project_id)
+        with _new_inference_session() as model_id:
+            record = _draft_project_script(project_id, model_id)
         typer.echo(f"Script submitted for review: {project_id}")
         typer.echo(f"Script: {record['artifacts']['script']}")
     except Exception as error:
@@ -371,24 +392,14 @@ def advance() -> None:
     """Run the next non-approval stages; stop at every human approval gate."""
     records = _store().list()
     needs_model = any(record["stage"] in {"topic_approved", "research_ready"} for record in records)
-    service = None
-    started_here = False
+    session = None
+    model_id = None
     if needs_model:
         try:
-            from ai_video_factory.cli import build_inference_service
-            service = build_inference_service()
-            if service.status().status != "pass":
-                started = service.start()
-                if started.status != "pass":
-                    typer.echo(
-                        f"Local inference is not ready: {started.error or started.status}. "
-                        "No research or script stage was advanced.",
-                        err=True,
-                    )
-                    return
-                started_here = True
+            session = _new_inference_session()
+            model_id = session.start()
         except Exception as error:
-            typer.echo(f"Local inference preflight failed: {error}", err=True)
+            typer.echo(f"Local inference is not ready: {error}", err=True)
             return
 
     try:
@@ -397,10 +408,10 @@ def advance() -> None:
             try:
                 stage = record["stage"]
                 if stage == "topic_approved":
-                    record = _research_project(project_id)
+                    record = _research_project(project_id, model_id)
                     stage = record["stage"]
                 if stage == "research_ready":
-                    record = _draft_project_script(project_id)
+                    record = _draft_project_script(project_id, model_id)
                     stage = record["stage"]
                 if stage == "script_approved":
                     record = _render_project(project_id)
@@ -409,13 +420,11 @@ def advance() -> None:
             except Exception as error:
                 typer.echo(f"{project_id}: PAUSED — {error}", err=True)
     finally:
-        if started_here and service is not None:
-            stopped = service.stop()
-            if stopped.status != "pass":
-                typer.echo(
-                    f"Warning: local inference did not stop cleanly: {stopped.error}",
-                    err=True,
-                )
+        if session is not None:
+            try:
+                session.stop()
+            except Exception as error:
+                typer.echo(f"Warning: local model unload failed: {error}", err=True)
 
 
 @app.command()
