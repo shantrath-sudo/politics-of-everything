@@ -71,6 +71,11 @@ def test_delivery_package_is_private_and_does_not_publish(tmp_path, monkeypatch)
     assert record["artifacts"]["delivery_package"] == str(package)
     assert record["artifacts"]["delivery_manifest"] == str(package / "delivery_manifest.json")
 
+    # A damaged existing package is rebuilt rather than treated as delivered.
+    (package / "script.md").unlink()
+    channel_cli.deliver(force=True)
+    assert (package / "script.md").is_file()
+
 
 def test_launchd_templates_define_daily_advance_and_sunday_delivery():
     root = Path(__file__).resolve().parents[1] / "launchd"
