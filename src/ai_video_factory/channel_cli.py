@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import tomllib
 from datetime import date, datetime
 from pathlib import Path
@@ -425,6 +426,86 @@ def advance() -> None:
                 session.stop()
             except Exception as error:
                 typer.echo(f"Warning: local model unload failed: {error}", err=True)
+
+
+@app.command()
+def deliver(
+    force: bool = typer.Option(False, "--force", help="Allow a manual test outside Sunday"),
+) -> None:
+    """Assemble the private Sunday review package; never uploads or publishes."""
+    today = _today()
+    if today.weekday() != 6 and not force:
+        raise typer.BadParameter("Sunday delivery runs on Sunday Asia/Kolkata. Use --force only for a manual test.")
+    ready = [item for item in _store().list() if item.get("stage") == "final_pending"]
+    if not ready:
+        typer.echo("No final_pending documentary is ready. Nothing was delivered.")
+        return
+    for record in ready:
+        project_id = record["project_id"]
+        project_dir = _project_dir(project_id)
+        manifest_path = Path(record["artifacts"]["production_manifest"])
+        master_path = Path(record["artifacts"]["final_video"])
+        if not manifest_path.is_file() or not master_path.is_file():
+            typer.echo(f"{project_id}: review package incomplete; missing manifest or master MP4", err=True)
+            continue
+        destination = DATA / "deliveries" / today.isoformat() / project_id
+        if destination.exists():
+            typer.echo(f"{project_id}: already delivered to {destination}")
+            continue
+        destination.mkdir(parents=True, exist_ok=True)
+        files: dict[str, str] = {}
+
+        def add_file(label: str, source: str | Path, filename: str | None = None) -> None:
+            source_path = Path(source)
+            if not source_path.is_file():
+                return
+            target_path = destination / (filename or source_path.name)
+            try:
+                target_path.hardlink_to(source_path)
+            except OSError:
+                shutil.copy2(source_path, target_path)
+            files[label] = str(target_path)
+
+        add_file("final_video", master_path, "final.mp4")
+        add_file("production_manifest", manifest_path, "production_manifest.json")
+        add_file("script", record["artifacts"].get("script", ""), "script.json")
+        for label, source in json.loads(manifest_path.read_text(encoding="utf-8")).get("artifacts", {}).items():
+            if label in {"attribution", "subtitles", "thumbnail", "description", "chapters", "qc_report"}:
+                add_file(label, source)
+        research_dir = project_dir / "research"
+        if research_dir.is_dir():
+            shutil.copytree(research_dir, destination / "research", dirs_exist_ok=True)
+            files["research_dossier"] = str(destination / "research")
+        review_text = [
+            f"# Politics of Everything — final review",
+            "",
+            f"Project: {project_id}",
+            f"Topic: {record['topic']['title']}",
+            f"Delivery date: {today.isoformat()} (Asia/Kolkata)",
+            "",
+            "## Files",
+        ]
+        review_text.extend(f"- {label}: {path}" for label, path in files.items())
+        review_text.extend([
+            "",
+            "## Editorial status",
+            "- Final video is awaiting Editor-in-Chief approval.",
+            "- This package is private and local.",
+            "- No YouTube upload or publication has occurred.",
+        ])
+        (destination / "REVIEW.md").write_text("\\n".join(review_text) + "\\n", encoding="utf-8")
+        delivery_manifest = {
+            "project_id": project_id,
+            "delivered_at": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+            "files": files,
+            "final_approval_required": True,
+            "published": False,
+        }
+        (destination / "delivery_manifest.json").write_text(
+            json.dumps(delivery_manifest, indent=2) + "\\n", encoding="utf-8"
+        )
+        typer.echo(f"{project_id}: review package ready at {destination}")
+        typer.echo("Final approval is still required. Nothing was published.")
 
 
 @app.command()
