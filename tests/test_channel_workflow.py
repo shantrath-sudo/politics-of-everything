@@ -38,6 +38,7 @@ def test_scout_clusters_related_headlines_and_scores_sources():
         transport=lambda _url: RSS,
         now=datetime(2026, 11, 15, 12, tzinfo=UTC),
         limit=10,
+        resolver=lambda url: url,
     )
     assert len(candidates) == 1
     candidate = candidates[0]
@@ -56,6 +57,7 @@ def test_scout_excludes_previously_covered_topics(tmp_path):
         transport=lambda _url: RSS,
         now=datetime(2026, 11, 15, 12, tzinfo=UTC),
         ledger_path=ledger_path,
+        resolver=lambda url: url,
     )
     assert candidates == []
 
