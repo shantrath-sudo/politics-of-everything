@@ -415,6 +415,9 @@ class WorkflowStore:
             "created_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
             "artifacts": {},
+            "revision_count": 0,
+            "pending_revision_feedback": None,
+            "revision_requests": [],
             "history": [{"stage": "topic_pending", "event": "project_created"}],
         }
         path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
@@ -460,6 +463,45 @@ class WorkflowStore:
         elif next_stage == "final_approved":
             record["approvals"]["final"] = True
         self._path(project_id).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        return record
+
+    def request_revision(self, project_id: str, feedback: str) -> dict[str, Any]:
+        """Reopen research/script production after a rejected script or final video."""
+        record = self.get(project_id)
+        current = record["stage"]
+        if current not in {"script_pending", "final_pending"}:
+            raise ChannelWorkflowError(
+                f"revision can only be requested from script_pending or final_pending, got {current}"
+            )
+        note = (feedback or "").strip()
+        if not note:
+            raise ChannelWorkflowError("revision feedback cannot be empty")
+        if len(note) > 2000:
+            raise ChannelWorkflowError("revision feedback must be 2000 characters or fewer")
+
+        record["revision_count"] = int(record.get("revision_count", 0)) + 1
+        record["pending_revision_feedback"] = note
+        record.setdefault("revision_requests", []).append({
+            "revision": record["revision_count"],
+            "from_stage": current,
+            "feedback": note,
+            "requested_at": datetime.now(UTC).isoformat(),
+        })
+        record["stage"] = "research_ready"
+        record["approvals"]["script"] = False
+        record["approvals"]["final"] = False
+        record["artifacts"].pop("production_manifest", None)
+        record["artifacts"].pop("final_video", None)
+        record["updated_at"] = datetime.now(UTC).isoformat()
+        record["history"].append({
+            "stage": "research_ready",
+            "event": "revision_requested",
+            "from_stage": current,
+            "revision": record["revision_count"],
+        })
+        self._path(project_id).write_text(
+            json.dumps(record, indent=2) + "\n", encoding="utf-8"
+        )
         return record
 
     def list(self) -> list[dict[str, Any]]:
