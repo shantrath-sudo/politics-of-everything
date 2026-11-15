@@ -10,6 +10,9 @@ import re
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from urllib.error import HTTPError
+from urllib.parse import urljoin, urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, date, datetime
 from email.utils import parsedate_to_datetime
@@ -133,6 +136,42 @@ def _score_candidate(candidate: TopicCandidate, now: datetime) -> None:
     )
 
 
+def _resolve_article_url(url: str) -> str:
+    """Resolve a Google News redirect to its HTTPS publisher URL safely."""
+    from ai_video_factory.research_pipeline import _is_blocked_host
+
+    def validate(candidate: str) -> None:
+        parsed = urlsplit(candidate)
+        if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+            raise ChannelWorkflowError("article link must resolve to a credential-free HTTPS URL")
+        if _is_blocked_host(parsed.hostname):
+            raise ChannelWorkflowError("article link resolved to a blocked or private host")
+
+    class SafeRedirects(HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            destination = urljoin(req.full_url, newurl)
+            validate(destination)
+            return super().redirect_request(req, fp, code, msg, headers, destination)
+
+    validate(url)
+    opener = build_opener(SafeRedirects())
+    request = Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
+    try:
+        with opener.open(request, timeout=12) as response:
+            resolved = response.geturl()
+    except HTTPError as error:
+        if error.code not in {405, 501}:
+            raise ChannelWorkflowError(f"could not resolve article link (HTTP {error.code})") from error
+        request = Request(url, headers={"User-Agent": USER_AGENT, "Range": "bytes=0-0"})
+        with opener.open(request, timeout=12) as response:
+            resolved = response.geturl()
+    validate(resolved)
+    host = (urlsplit(resolved).hostname or "").lower()
+    if host == "news.google.com" or host.endswith(".news.google.com"):
+        raise ChannelWorkflowError("Google News did not resolve to the publisher article")
+    return resolved
+
+
 def _read_feed(query: str, transport: Transport) -> list[dict[str, str]]:
     params = urllib.parse.urlencode({
         "q": query, "hl": "en-US", "gl": "US", "ceid": "US:en",
@@ -227,7 +266,24 @@ def scout_topics(
             if not ledger.is_duplicate("politics-of-everything", c.title)
         ]
     clusters.sort(key=lambda c: (c.score, c.source_diversity, c.recency), reverse=True)
-    return clusters[:limit]
+    resolved: list[TopicCandidate] = []
+    for candidate in clusters:
+        direct_urls: list[str] = []
+        for article_url in candidate.article_urls[:8]:
+            try:
+                direct = resolver(article_url)
+            except Exception:
+                continue
+            if direct not in direct_urls:
+                direct_urls.append(direct)
+        if not direct_urls:
+            continue
+        candidate.article_urls = direct_urls
+        candidate.url = direct_urls[0]
+        resolved.append(candidate)
+        if len(resolved) >= limit:
+            break
+    return resolved
 
 
 def save_scout_report(candidates: list[TopicCandidate], output_dir: Path, *, on_date: date | None = None) -> Path:
