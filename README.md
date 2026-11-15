@@ -25,7 +25,7 @@ The politics-channel command searches public Google News RSS feeds in India and 
     politics-channel scout
     politics-channel status
 
-The scout saves a dated shortlist under data/channel/scouting/. Discovery scores are prioritisation signals only; they are not fact checks. A candidate becomes a project only after explicit topic approval:
+The scout saves a dated JSON report and a readable Markdown shortlist under data/channel/scouting/. Discovery scores are prioritisation signals only; they are not fact checks. A candidate becomes a project only after explicit topic approval:
 
     politics-channel approve-topic CANDIDATE_ID
 
