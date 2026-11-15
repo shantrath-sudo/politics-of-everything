@@ -4,7 +4,7 @@ Produces 10-15 minute evidence-led documentary scripts with a clear three-act
 structure: a cold-open hook, setup, three development beats with rising
 stakes, a climax, and a payoff outro. Each beat is generated separately
 against a shared series bible so a local LM Studio model can sustain
-coherence across ~4,000 words without losing the thread.
+coherence across ~2,000 words without losing the thread.
 
 Retention design (baked into every beat prompt):
 - cold open plants an open loop the climax pays off
