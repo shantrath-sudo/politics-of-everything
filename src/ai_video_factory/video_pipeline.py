@@ -1547,6 +1547,12 @@ def _verify_longform_duration(
     never saw it -- are verified here instead of silently rendering short,
     as Fermi v2 did (22:31 vs the 25-minute target).
     """
+    if not 10 <= target_minutes <= 15:
+        raise PipelineCommandError("Politics of Everything render target must be between 10 and 15 minutes")
+    if not 10 <= script.estimated_minutes <= 15:
+        raise PipelineCommandError(
+            f"longform script runtime {script.estimated_minutes:.1f} minutes is outside the 10–15 minute channel limit"
+        )
     target_words = target_minutes * WORDS_PER_MINUTE
     shortfall = target_words - script.total_words
     if shortfall > target_words * tolerance:
