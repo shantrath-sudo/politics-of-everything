@@ -73,6 +73,9 @@ def test_scout_report_is_saved_with_discovery_disclaimer(tmp_path):
     payload = __import__("json").loads(path.read_text())
     assert payload["candidate_count"] == 1
     assert "not verified facts" in payload["disclaimer"]
+    markdown = path.with_suffix(".md").read_text()
+    assert "Who controls democracy?" in markdown
+    assert "Candidate ID" in markdown
 
 
 def test_workflow_requires_explicit_order_and_artifacts(tmp_path):
