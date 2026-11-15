@@ -148,9 +148,9 @@ def _draft_project_script(project_id: str, model_id: str) -> dict:
     revision_feedback = (record.get("pending_revision_feedback") or "").strip()
     if revision_feedback:
         research_brief += (
-            "\\n\\nEDITOR REVISION REQUEST (must be addressed):\\n"
+            "\n\nEDITOR REVISION REQUEST (must be addressed):\n"
             + revision_feedback
-            + "\\nPreserve verified facts, citations, neutrality and the 10–15 minute runtime. "
+            + "\nPreserve verified facts, citations, neutrality and the 10–15 minute runtime. "
               "Do not invent evidence to satisfy feedback."
         )
     urls = list(dict.fromkeys(candidate.get("article_urls") or [candidate["url"]]))
@@ -171,7 +171,9 @@ def _draft_project_script(project_id: str, model_id: str) -> dict:
     check_topic_adherence(script, chat=chat_fn)
     project_dir = _project_dir(project_id)
     project_dir.mkdir(parents=True, exist_ok=True)
-    script_path = project_dir / "script.json"
+    revision_count = int(record.get("revision_count", 0))
+    script_name = "script.json" if revision_count == 0 else f"script-revision-{revision_count}.json"
+    script_path = project_dir / script_name
     script_path.write_text(script.to_json() + "\n", encoding="utf-8")
     return _store().transition(project_id, "script_pending", artifact=str(script_path))
 
