@@ -472,7 +472,7 @@ def deliver(
         add_file("production_manifest", manifest_path, "production_manifest.json")
         add_file("script", record["artifacts"].get("script", ""), "script.json")
         for label, source in json.loads(manifest_path.read_text(encoding="utf-8")).get("artifacts", {}).items():
-            if label in {"attribution", "subtitles", "thumbnail", "description", "chapters", "qc_report"}:
+            if label in {"attribution", "subtitles", "srt", "ass", "webvtt", "thumbnail", "thumbnail_1", "thumbnail_2", "thumbnail_3", "description", "chapters", "chapters_json", "chapters_webvtt", "metadata_json", "metadata_md", "qc_report", "qc_final_report", "qc_report_markdown"}:
                 add_file(label, source)
         music_attribution = ROOT / "assets" / "music" / "ATTRIBUTION.md"
         add_file("music_attribution", music_attribution, "MUSIC_ATTRIBUTION.md")
