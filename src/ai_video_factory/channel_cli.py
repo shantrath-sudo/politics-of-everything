@@ -613,13 +613,21 @@ def deliver(
             continue
         destination = DATA / "deliveries" / today.isoformat() / project_id
         if destination.exists():
-            if (destination / "delivery_manifest.json").is_file():
-                _store().record_delivery(
-                    project_id, destination, destination / "delivery_manifest.json"
-                )
-                typer.echo(f"{project_id}: already delivered to {destination}")
-                continue
-            shutil.rmtree(destination)
+            existing_manifest = destination / "delivery_manifest.json"
+            if existing_manifest.is_file():
+                existing_record = _store().get(project_id)
+                existing_record["artifacts"]["delivery_package"] = str(destination)
+                existing_record["artifacts"]["delivery_manifest"] = str(existing_manifest)
+                try:
+                    _validate_review_package(existing_record)
+                except ChannelWorkflowError:
+                    shutil.rmtree(destination)
+                else:
+                    _store().record_delivery(project_id, destination, existing_manifest)
+                    typer.echo(f"{project_id}: already delivered to {destination}")
+                    continue
+            else:
+                shutil.rmtree(destination)
         destination.mkdir(parents=True, exist_ok=True)
         files: dict[str, str] = {}
 
