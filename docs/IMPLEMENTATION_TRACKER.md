@@ -9,7 +9,7 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 3 | Channel configuration and editorial identity | COMPLETE | Channel config, editorial constitution, production plan and fixed decisions committed |
 | 4 | Daily topic discovery and scoring | COMPLETE | Query-based Google News RSS scouting across India and US editions, topic scoring, clustering, publisher URL resolution and CI tests |
 | 5 | Duplicate detection and topic ledger | COMPLETE | Covered-topic ledger checked during scouting; updated only after final approval |
-| 6 | Research dossier and source-quality rules | IN PROGRESS | Existing secure research pipeline connected; real publisher fetch/extraction still needs Mac smoke test |
+| 6 | Research dossier and source-quality rules | IN PROGRESS | Secure research pipeline uses political/institutional source profiles and channel-relevant excerpt selection; real publisher fetch/extraction still needs Mac smoke test |
 | 7 | Claim ledger and corroboration | IN PROGRESS | Source, claim, contradiction and verified-fact artifacts integrated; real dossier not yet generated |
 | 8 | 10–15 minute script engine | COMPLETE | Runtime limits, political documentary prompt, longer research context and CI tests |
 | 9 | Topic/script/final approval gates | COMPLETE | Persistent fail-closed state transitions; explicit topic, script and final approval commands |
@@ -23,7 +23,7 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 17 | Operational activation | PENDING | Requires local setup, full rehearsal and explicit user go-ahead; publishing remains disabled |
 
 ## Verified CI
-The channel-critical GitHub Actions workflow passed on commit 85ddce91. It includes topic discovery/workflow (including India + international RSS editions), long-form duration, format, scheduler and inference configuration/service tests, plus Python compilation and CLI help smoke tests. This verifies repository code in CI; it does not prove a live Mac render, real-source research run, local model inference or local TTS.
+The channel-critical GitHub Actions workflow passed after the research-pipeline changes. It includes topic discovery/workflow (India + international RSS editions), political excerpt selection, source/claim provenance, long-form duration, format, scheduler and inference configuration/service tests, plus Python compilation and CLI help smoke tests. This verifies repository code in CI; it does not prove a live Mac render, real-source research run, local model inference or local TTS.
 
 ## Fixed configuration
 - Channel: Politics of Everything
