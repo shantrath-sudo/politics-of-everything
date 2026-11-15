@@ -1,0 +1,4 @@
+# Local resource guardrails for the 16 GB Apple Silicon workstation.
+minimum_free_disk_gib = 12
+minimum_available_memory_gib = 8
+maximum_commons_asset_bytes = 104857600
