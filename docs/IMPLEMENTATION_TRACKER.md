@@ -7,7 +7,7 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 1 | Audit source repository and dependencies | COMPLETE | Repository tree, source modules, test inventory and render report inspected |
 | 2 | Establish channel working repository | COMPLETE | Fork verified; write permission confirmed |
 | 3 | Channel configuration and editorial identity | COMPLETE | Channel config, editorial constitution, production plan and fixed decisions committed |
-| 4 | Daily topic discovery and scoring | COMPLETE | Query-based Google News RSS scouting across India and US editions, topic scoring, clustering, publisher URL resolution and CI tests |
+| 4 | Daily topic discovery and scoring | COMPLETE | Query-based Google News RSS scouting across India, UK and US editions, topic scoring, clustering, publisher URL resolution and CI tests |
 | 5 | Duplicate detection and topic ledger | COMPLETE | Covered-topic ledger checked during scouting; updated only after final approval |
 | 6 | Research dossier and source-quality rules | IN PROGRESS | Secure research pipeline uses political/institutional source profiles and channel-relevant excerpt selection; real publisher fetch/extraction still needs Mac smoke test |
 | 7 | Claim ledger and corroboration | IN PROGRESS | Source, claim, contradiction and verified-fact artifacts integrated; verified facts require two independent reliable publisher domains; real dossier not yet generated |
