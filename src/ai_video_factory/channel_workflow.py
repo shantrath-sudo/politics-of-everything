@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -487,6 +488,23 @@ class WorkflowStore:
             for key in ("script", "production_manifest", "final_video", "delivery_package", "delivery_manifest")
             if record["artifacts"].get(key)
         }
+        archived_package = None
+        old_package_value = previous_artifacts.get("delivery_package")
+        if old_package_value:
+            old_package = Path(old_package_value)
+            if old_package.is_dir():
+                archive_root = old_package.parent / "revisions" / project_id
+                archive_root.mkdir(parents=True, exist_ok=True)
+                archived_package = archive_root / f"revision-{record['revision_count']}"
+                if archived_package.exists():
+                    shutil.rmtree(archived_package)
+                shutil.move(str(old_package), str(archived_package))
+                previous_artifacts["delivery_package"] = str(archived_package)
+                old_manifest = previous_artifacts.get("delivery_manifest")
+                if old_manifest:
+                    previous_artifacts["delivery_manifest"] = str(
+                        archived_package / Path(old_manifest).name
+                    )
         record.setdefault("revision_requests", []).append({
             "revision": record["revision_count"],
             "from_stage": current,
@@ -508,6 +526,7 @@ class WorkflowStore:
             "event": "revision_requested",
             "from_stage": current,
             "revision": record["revision_count"],
+            "archived_delivery_package": str(archived_package) if archived_package else None,
         })
         self._path(project_id).write_text(
             json.dumps(record, indent=2) + "\n", encoding="utf-8"
