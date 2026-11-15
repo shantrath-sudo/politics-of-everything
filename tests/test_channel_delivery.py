@@ -17,6 +17,8 @@ def test_delivery_package_is_private_and_does_not_publish(tmp_path, monkeypatch)
     dossier.write_text("Verified research notes.")
     script = project_dir / "script.json"
     script.write_text('{"title":"Who controls democracy?"}')
+    script_markdown = project_dir / "script.md"
+    script_markdown.write_text("# Who controls democracy?\\n\\nNarration.")
     video = project_dir / "final.mp4"
     video.write_bytes(b"fake-mp4")
     attribution = project_dir / "attribution.json"
@@ -56,6 +58,7 @@ def test_delivery_package_is_private_and_does_not_publish(tmp_path, monkeypatch)
     package = package_dirs[0].parent
     assert (package / "final.mp4").read_bytes() == b"fake-mp4"
     assert (package / "script.json").is_file()
+    assert (package / "script.md").is_file()
     assert (package / "research" / "research_brief.md").is_file()
     assert (package / "attribution.json").is_file()
     assert (package / "captions.srt").is_file()
@@ -118,6 +121,8 @@ def test_final_approval_is_blocked_until_private_package_exists(tmp_path, monkey
     package_manifest.write_text("{}")
     package_script = package / "script.json"
     package_script.write_text("{}")
+    package_script_markdown = package / "script.md"
+    package_script_markdown.write_text("# Script")
     package_research = package / "research"
     package_research.mkdir()
     (package_research / "research_brief.md").write_text("Research dossier.")
@@ -130,6 +135,7 @@ def test_final_approval_is_blocked_until_private_package_exists(tmp_path, monkey
             "final_video": str(package_video),
             "production_manifest": str(package_manifest),
             "script": str(package_script),
+            "script_markdown": str(package / "script.md"),
             "research_dossier": str(package_research),
         },
     }))
