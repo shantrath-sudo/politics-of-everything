@@ -75,13 +75,21 @@ def _project_dir(project_id: str) -> Path:
     return DATA / "projects" / project_id
 
 
+def _publisher_domain(url: str) -> str | None:
+    """Normalize common publisher subdomains before counting independent sources."""
+    host = (urlsplit(url).hostname or "").lower().rstrip(".")
+    while host.startswith(("www.", "m.", "mobile.", "amp.")):
+        host = host.split(".", 1)[1]
+    return host or None
+
+
 def _research_project(project_id: str, model_id: str) -> dict:
     record = _store().get(project_id)
     if record["stage"] != "topic_approved":
         raise ChannelWorkflowError(f"{project_id}: research requires topic_approved, got {record['stage']}")
     candidate = record["topic"]
     urls = list(dict.fromkeys(candidate.get("article_urls") or [candidate["url"]]))
-    publisher_hosts = {urlsplit(url).hostname for url in urls if urlsplit(url).hostname}
+    publisher_hosts = {domain for url in urls if (domain := _publisher_domain(url))}
     if len(publisher_hosts) < 2:
         raise ChannelWorkflowError("research requires at least two independent publisher domains")
     from ai_video_factory.research_pipeline import (
