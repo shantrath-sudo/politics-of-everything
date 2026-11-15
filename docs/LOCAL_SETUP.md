@@ -110,4 +110,8 @@ The automation stops at each editorial gate. Notifications tell you when action 
 
        politics-channel approve-final PROJECT_ID
 
-The Sunday delivery job assembles a private review folder under `data/deliveries/`. Final approval records your decision; it does not upload or publish anything. If you reject a script or video, do not approve it—the workflow remains paused for correction.
+The Sunday delivery job assembles a private review folder under `data/deliveries/`. Final approval records your decision; it does not upload or publish anything. If you reject a script or video, do not approve it. Request a revision with a specific explanation:
+
+       politics-channel request-revision PROJECT_ID "Explain the required changes here"
+
+The workflow returns to research-ready, preserves earlier script versions, regenerates the script using your feedback, and pauses for script approval again. A rejected final video is also sent through this revision and re-render cycle.
