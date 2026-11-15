@@ -212,7 +212,7 @@ class InferenceService:
                     ),
                 },
                 metrics=self._estimate_metrics(estimate, available),
-                error=None if allowed else "available memory is below the configured 40 GiB gate",
+                error=None if allowed else f"available memory is below the configured {self.config.minimum_available_memory_gib:g} GiB gate",
             )
         except Exception as exc:
             return self._failure("estimate", exc)
@@ -262,7 +262,7 @@ class InferenceService:
                             )
                         },
                         metrics=metrics,
-                        error="available memory is below the configured 40 GiB gate",
+                        error=f"available memory is below the configured {self.config.minimum_available_memory_gib:g} GiB gate",
                     )
                 if not before.server_running:
                     self.backend.start_server()
