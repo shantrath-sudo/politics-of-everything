@@ -680,7 +680,16 @@ def _normalized_source_domain(url: str) -> str:
         return ""
     while host.startswith(("www.", "m.", "mobile.", "amp.")):
         host = host.split(".", 1)[1]
-    return host
+    # Known alternate domains operated by the same publisher are one source.
+    aliases = {
+        "bbc.co.uk": "bbc",
+        "bbc.com": "bbc",
+        "apnews.com": "ap",
+        "ap.org": "ap",
+        "theguardian.com": "guardian",
+        "guardian.co.uk": "guardian",
+    }
+    return aliases.get(host, host)
 
 
 def classify_source_quality(url: str) -> SourceQuality:
