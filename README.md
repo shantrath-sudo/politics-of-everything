@@ -59,7 +59,11 @@ The advance command runs only non-approval stages and stops at every human gate.
 
 ### macOS scheduling
 
-After local dependencies and the configured model are ready, install the three launchd jobs:
+After installing LM Studio and bootstrapping its `lms` command, the one-command setup is:
+
+    zsh scripts/bootstrap_mac.sh
+
+It installs missing Homebrew tools, the local model, Kokoro, Remotion dependencies, runs a real model-completion smoke test and registers the three launchd jobs. If you have already completed those steps manually, you can install only the schedules with:
 
     zsh scripts/install_launchd.sh
 
