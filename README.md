@@ -48,6 +48,7 @@ Commands:
     politics-channel research PROJECT_ID
     politics-channel draft-script PROJECT_ID
     politics-channel approve-script PROJECT_ID
+    politics-channel request-revision PROJECT_ID "Describe required changes"
     politics-channel render PROJECT_ID
     politics-channel approve-final PROJECT_ID
     politics-channel advance
