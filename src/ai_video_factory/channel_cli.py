@@ -417,8 +417,9 @@ def advance() -> None:
     try:
         for record in records:
             project_id = record["project_id"]
+            initial_stage = record["stage"]
             try:
-                stage = record["stage"]
+                stage = initial_stage
                 if stage == "topic_approved":
                     record = _research_project(project_id, model_id)
                     stage = record["stage"]
@@ -428,7 +429,10 @@ def advance() -> None:
                 if stage == "script_approved":
                     record = _render_project(project_id)
                     stage = record["stage"]
-                typer.echo(f"{project_id}: {stage}")
+                if stage != initial_stage:
+                    typer.echo(f"{project_id}: {initial_stage} -> {stage}")
+                else:
+                    typer.echo(f"{project_id}: waiting for {stage}")
             except Exception as error:
                 typer.echo(f"{project_id}: PAUSED — {error}", err=True)
     finally:
