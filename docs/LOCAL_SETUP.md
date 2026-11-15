@@ -104,7 +104,7 @@ No YouTube upload or publication is performed.
 
 The automation stops at each editorial gate. Notifications tell you when action is needed.
 
-1. **Choose the topic.** Open the latest Markdown shortlist in `data/channel/scouting/`. Copy the candidate ID and run:
+1. **Choose the topic.** Open the latest Markdown shortlist in `data/channel/scouting/`. Copy the exact approval command shown under your chosen candidate and run it:
 
        politics-channel approve-topic CANDIDATE_ID
 
