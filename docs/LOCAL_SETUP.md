@@ -50,7 +50,7 @@ This installs Python dependencies and Kokoro if not already installed, checks th
 - approval-gated workflow advancement every four hours
 - private final-review package assembly every Sunday at 09:00
 
-The Mac must be awake and the user session available. Logs are stored under data/logs/.
+Keep at least 12 GiB free on the startup disk for render intermediates and safety headroom. The status command reports free disk space. The Mac must be awake and the user session available. Logs are stored under data/logs/.
 
 To remove the schedules without deleting project data:
 
