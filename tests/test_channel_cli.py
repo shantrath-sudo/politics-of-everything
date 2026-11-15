@@ -56,3 +56,28 @@ def test_publisher_domain_collapses_common_subdomains():
     assert channel_cli._publisher_domain("https://m.bbc.co.uk/news/story") == "bbc"
     assert channel_cli._publisher_domain("https://bbc.com/news/story") == "bbc"
     assert channel_cli._publisher_domain("https://example.org/story") == "example.org"
+
+
+
+def test_model_check_loads_calls_local_model_and_unloads(tmp_path, monkeypatch):
+    class FakeSession:
+        stopped = False
+
+        def start(self):
+            return "poe-qwen35-4b"
+
+        def stop(self):
+            self.stopped = True
+
+    session = FakeSession()
+    monkeypatch.setattr(channel_cli, "_new_inference_session", lambda: session)
+    from ai_video_factory import longform
+    monkeypatch.setattr(
+        longform,
+        "_lm_studio_chat",
+        lambda messages, max_tokens, model: "READY",
+    )
+    result = CliRunner().invoke(channel_cli.app, ["model-check"])
+    assert result.exit_code == 0, result.output
+    assert "Local model smoke test passed" in result.output
+    assert session.stopped is True
