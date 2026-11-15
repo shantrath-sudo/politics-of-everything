@@ -107,3 +107,17 @@ def test_session_rejects_nonstandard_loopback_paths():
             identifier="poe-qwen35-4b",
             base_url="http://127.0.0.1:1234/v1/other",
         )
+
+
+def test_session_does_not_load_beside_an_unrelated_model():
+    calls = []
+    session = MacInferenceSession(
+        model_key="local/qwen.gguf",
+        identifier="poe-qwen35-4b",
+        command_runner=_runner(calls),
+        http_get=lambda _url, _timeout: '{"models":[{"key":"other/model","loaded_instances":[{"id":"other-model"}]}]}',
+        memory_reader=lambda: 12.0,
+    )
+    with pytest.raises(MacInferenceError, match="another LM Studio model is already loaded"):
+        session.start()
+    assert calls == []
