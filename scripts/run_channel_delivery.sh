@@ -11,8 +11,12 @@ if [[ -z "$UV_BIN" ]]; then
 fi
 mkdir -p "$PROJECT_ROOT/data/logs"
 cd "$PROJECT_ROOT"
+set +e
 OUTPUT="$("$UV_BIN" run --project "$PROJECT_ROOT" --extra tts politics-channel deliver 2>&1)"
+STATUS=$?
+set -e
 printf '%s\n' "$OUTPUT"
+if [[ $STATUS -ne 0 ]]; then exit $STATUS; fi
 if command -v osascript >/dev/null 2>&1 && printf '%s' "$OUTPUT" | grep -q 'review package ready at'; then
   osascript -e 'display notification "The Sunday documentary review package is ready. No video was published." with title "Politics of Everything"'
 fi
