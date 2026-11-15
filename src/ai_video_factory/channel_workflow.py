@@ -345,6 +345,7 @@ def save_scout_report(candidates: list[TopicCandidate], output_dir: Path, *, on_
             f"## {index}. {candidate.title}",
             "",
             f"- Candidate ID: `{candidate.candidate_id}`",
+            f"- Approve command: `politics-channel approve-topic {candidate.candidate_id} --date {report_date.isoformat()}`",
             f"- Priority score: **{candidate.score:.2f}/5**",
             f"- Topic fit: {candidate.topic_fit:.1f}/5",
             f"- India relevance: {candidate.india_relevance:.1f}/5",
