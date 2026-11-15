@@ -1580,9 +1580,8 @@ def _populate_commons_assets(edit: EditDocument, assets_dir: Path) -> list:
         slot = slots.get(str(scene.id))
         if slot is not None:
             scene_dir = Path(assets_dir) / f"scene-{slot:02d}"
-        elif scene.kind in ("intro", "outro"):
-            scene_dir = Path(assets_dir) / f"card-{scene.kind}"
         else:
+            # Intro/outro cards intentionally remain typography-led.
             continue
         if scene.clip or scene.image:
             continue
