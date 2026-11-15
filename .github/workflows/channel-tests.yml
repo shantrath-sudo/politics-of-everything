@@ -31,11 +31,5 @@ jobs:
         run: uv run python -m compileall -q src
       - name: Check channel CLI
         run: uv run politics-channel --help
-      - name: Run channel-critical tests
-        run: >-
-          uv run pytest -q
-          tests/test_channel_workflow.py
-          tests/test_longform.py
-          tests/test_duration_enforcer.py
-          tests/test_formats.py
-          tests/test_scheduler.py
+      - name: Run complete test suite
+        run: uv run pytest -q
