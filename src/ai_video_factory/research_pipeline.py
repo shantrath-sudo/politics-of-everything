@@ -1386,8 +1386,8 @@ def _build_claims_from_records(records: list[EvidenceRecord]) -> list[Claim]:
     """Merge per-source evidence records into claims via auditable corroboration.
 
     Records are grouped by normalized claim text (whitespace-collapsed, lowercased,
-    trailing period stripped). A group is promoted only when it is backed by >=2
-    distinct independent source URLs with supported labels -- genuine cross-source corroboration,
+    trailing period stripped). A group is promoted only when it is backed by at least
+    two distinct reliable publisher domains with supported labels -- genuine cross-source corroboration,
     not a model heuristic. Unmatched records become single-source claims so no sourced
     material is dropped. Every retained claim carries an auditable verbatim evidence
     quote (validated as a substring of its source during extraction).
@@ -1409,11 +1409,16 @@ def _build_claims_from_records(records: list[EvidenceRecord]) -> list[Claim]:
         members = g["members"]
         supported = [m for m in members if m.label in _SUPPORTED_LABELS]
         urls = sorted({m.url for m in members})
-        supported_urls = sorted({m.url for m in supported})
-        # Corroboration (and promotion) requires >=2 distinct independent sources.
-        if len(supported_urls) >= 2:
+        reliable_supported_urls = sorted({
+            m.url for m in supported if classify_source_quality(m.url) == "reliable"
+        })
+        reliable_supported_domains = {
+            _normalized_source_domain(url) for url in reliable_supported_urls
+        } - {""}
+        # Corroboration (and promotion) requires two distinct reliable publisher domains.
+        if len(reliable_supported_domains) >= 2:
             cls = min(
-                (m.label for m in supported),
+                (m.label for m in supported if m.url in reliable_supported_urls),
                 key=lambda c: _CLASS_ORDER.get(c, 9),
             )
             source_ids = reliable_supported_urls
