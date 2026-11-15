@@ -474,6 +474,8 @@ def deliver(
         for label, source in json.loads(manifest_path.read_text(encoding="utf-8")).get("artifacts", {}).items():
             if label in {"attribution", "subtitles", "thumbnail", "description", "chapters", "qc_report"}:
                 add_file(label, source)
+        music_attribution = ROOT / "assets" / "music" / "ATTRIBUTION.md"
+        add_file("music_attribution", music_attribution, "MUSIC_ATTRIBUTION.md")
         research_dir = project_dir / "research"
         if research_dir.is_dir():
             shutil.copytree(research_dir, destination / "research", dirs_exist_ok=True)
