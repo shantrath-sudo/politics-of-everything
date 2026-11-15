@@ -11,4 +11,12 @@ if [[ -z "$UV_BIN" ]]; then
 fi
 mkdir -p "$PROJECT_ROOT/data/logs"
 cd "$PROJECT_ROOT"
-"$UV_BIN" run --project "$PROJECT_ROOT" --extra tts politics-channel advance
+OUTPUT="$("$UV_BIN" run --project "$PROJECT_ROOT" --extra tts politics-channel advance 2>&1)"
+printf '%s\n' "$OUTPUT"
+if command -v osascript >/dev/null 2>&1; then
+  if printf '%s' "$OUTPUT" | grep -q 'script_pending'; then
+    osascript -e 'display notification "A documentary script is ready for your approval. Run politics-channel status." with title "Politics of Everything"'
+  elif printf '%s' "$OUTPUT" | grep -q 'final_pending'; then
+    osascript -e 'display notification "A documentary render is ready for final review. Run politics-channel status." with title "Politics of Everything"'
+  fi
+fi
