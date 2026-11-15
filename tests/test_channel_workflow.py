@@ -117,3 +117,12 @@ def test_workflow_requires_final_video_before_final_approval(tmp_path):
     record = store.transition(project, "final_approved")
     assert record["stage"] == "final_approved"
     assert record["approvals"] == {"topic": True, "script": True, "final": True}
+
+
+def test_article_resolver_rejects_non_https_links_without_network():
+    from ai_video_factory.channel_workflow import ChannelWorkflowError, _resolve_article_url
+
+    with pytest.raises(ChannelWorkflowError, match="HTTPS"):
+        _resolve_article_url("http://example.com/story")
+    with pytest.raises(ChannelWorkflowError, match="HTTPS"):
+        _resolve_article_url("https://user:password@example.com/story")
