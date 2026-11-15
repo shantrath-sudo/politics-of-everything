@@ -362,7 +362,7 @@ def save_scout_report(candidates: list[TopicCandidate], output_dir: Path, *, on_
     lines.extend([
         "---",
         "A candidate requires explicit Editor-in-Chief approval before research begins.",
-        "Use its Candidate ID with `politics-channel approve-topic CANDIDATE_ID`.",
+        f"Use its Candidate ID with `politics-channel approve-topic CANDIDATE_ID --date {report_date.isoformat()}`.",
         "",
     ])
     markdown_path = destination.with_suffix(".md")
