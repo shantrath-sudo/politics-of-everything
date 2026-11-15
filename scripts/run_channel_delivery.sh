@@ -18,5 +18,5 @@ set -e
 printf '%s\n' "$OUTPUT"
 if [[ $STATUS -ne 0 ]]; then exit $STATUS; fi
 if command -v osascript >/dev/null 2>&1 && printf '%s' "$OUTPUT" | grep -q 'review package ready at'; then
-  osascript -e 'display notification "The Sunday documentary review package is ready. No video was published." with title "Politics of Everything"'
+  osascript -e 'display notification "The Sunday documentary review package is ready. No video was published." with title "Politics of Everything"' || true
 fi
