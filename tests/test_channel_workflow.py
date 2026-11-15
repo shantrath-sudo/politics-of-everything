@@ -92,7 +92,7 @@ def test_workflow_requires_explicit_order_and_artifacts(tmp_path):
     store.transition("poe-20261115-abc123", "script_pending", artifact="/tmp/script.md")
     approved = store.transition("poe-20261115-abc123", "script_approved")
     assert approved["approvals"]["script"] is True
-    with pytest.raises(ChannelWorkflowError, match="final video artifact"):
+    with pytest.raises(ChannelWorkflowError, match="invalid workflow transition"):
         store.transition("poe-20261115-abc123", "final_approved")
 
 
