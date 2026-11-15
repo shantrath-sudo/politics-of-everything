@@ -391,6 +391,7 @@ def test_build_scene_plan_runtime_stays_within_long_form_band():
                               source_contents={"https://example.com/water": content})
     plan = build_scene_plan(research, min_words=2200)
     plan, durations = synthesize_and_time(plan, OfflineRenderEngine())
+    plan, durations = fit_to_budget(plan, durations)
     # Must not raise: total runtime (scenes + bookends) is within the long-form band.
     enforce_runtime(durations)
     total = sum(durations) + _BOOKEND_SECONDS
