@@ -1,36 +1,16 @@
-# Channel definitions for the daily scheduler.
-# Each channel publishes one long-form documentary per day, unlisted, into the
-# review queue. Nothing goes public without `review approve`.
-#
-# Copy this file and adjust per deployment; point the scheduler at it with
-# --channels-config.
-
+# Politics of Everything — single-channel configuration
+# Weekly documentary delivery; publishing remains disabled.
 [[channels]]
-name = "Deep Space Diaries"
-slug = "deep-space-diaries"
-topic_focus = "space exploration, astronomy, and planetary science documentaries"
-theme = "space"
-target_duration_minutes = 25.0
-schedule_time = "09:00"
-timezone = "America/Chicago"
-privacy = "unlisted"
-category_id = "28"
-tags = ["space documentary", "astronomy", "nasa", "universe"]
-language = "en"
-research_queries = ["space exploration", "astronomy discoveries", "nasa missions"]
-trend_source = "all"
-
-[[channels]]
-name = "Earth Untamed"
-slug = "earth-untamed"
-topic_focus = "earth science, oceans, geology, and climate documentaries"
+name = "Politics of Everything"
+slug = "politics-of-everything"
+topic_focus = "Power, institutions, economics, society, culture, political ideas, technology, and geopolitics. International perspective with meaningful India relevance."
 theme = "generic"
-target_duration_minutes = 22.0
-schedule_time = "09:30"
-timezone = "America/Chicago"
-privacy = "unlisted"
-category_id = "28"
-tags = ["earth science", "nature documentary", "oceans", "geology"]
+target_duration_minutes = 12.5
+schedule_time = "09:00"
+timezone = "Asia/Kolkata"
+privacy = "private"
+category_id = "25"
+tags = ["politics", "documentary", "power", "democracy", "geopolitics", "economics", "society"]
 language = "en"
-research_queries = ["earth science", "ocean exploration", "geology discoveries"]
+research_queries = ["democracy and institutions", "political economy", "global power and geopolitics", "India and the world", "technology and society"]
 trend_source = "all"
