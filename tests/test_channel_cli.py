@@ -182,3 +182,63 @@ def test_script_approval_requires_json_and_markdown_companions(tmp_path, monkeyp
     approved = CliRunner().invoke(channel_cli.app, ["approve-script", project_id])
     assert approved.exit_code == 0, approved.output
     assert store.get(project_id)["stage"] == "script_approved"
+
+
+
+def test_start_pilot_creates_preapproved_project_from_reliable_sources(tmp_path, monkeypatch):
+    monkeypatch.setattr(channel_cli, "ROOT", tmp_path)
+    monkeypatch.setattr(channel_cli, "DATA", tmp_path / "data" / "channel")
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "pilot-topic.toml").write_text(
+        'title = "Who Really Controls a Democracy?\\n"'
+        'candidate_id = "pilot-democracy"\\n'
+        'summary = "An evidence-led documentary about democratic power."\\n'
+        'research_queries = ["democracy institutions", "India parliament accountability"]\\n'
+        'topic_terms = ["democracy", "parliament", "power"]\\n'
+        'max_sources = 6\\n'
+        'minimum_reliable_domains = 2\\n'
+    )
+    candidates = [
+        TopicCandidate(
+            candidate_id="lead111",
+            title="Democracy and institutional checks",
+            summary="A report on democratic institutions and power.",
+            url="https://www.reuters.com/world/example",
+            article_urls=[
+                "https://www.reuters.com/world/example",
+                "https://www.bbc.com/news/example",
+            ],
+            publishers=["Reuters", "BBC"],
+            topic_fit=4.0,
+            india_relevance=3.0,
+            international_relevance=4.0,
+            score=4.2,
+        ),
+        TopicCandidate(
+            candidate_id="lead222",
+            title="India parliament accountability",
+            summary="How Parliament and courts shape public power.",
+            url="https://prsindia.org/example",
+            article_urls=["https://prsindia.org/example"],
+            publishers=["PRS Legislative Research"],
+            topic_fit=4.5,
+            india_relevance=5.0,
+            international_relevance=3.0,
+            score=4.5,
+        ),
+    ]
+    monkeypatch.setattr(channel_cli, "scout_topics", lambda queries, limit: (candidates, []))
+
+    result = CliRunner().invoke(channel_cli.app, ["start-pilot"])
+    assert result.exit_code == 0, result.output
+    assert "Pre-approved pilot topic created" in result.output
+    record = WorkflowStore(channel_cli.DATA / "projects").list()[0]
+    assert record["stage"] == "topic_approved"
+    assert record["topic"]["title"] == "Who Really Controls a Democracy?"
+    assert len(record["topic"]["article_urls"]) == 3
+    assert len(record["topic"]["publishers"]) == 3
+
+    repeated = CliRunner().invoke(channel_cli.app, ["start-pilot"])
+    assert repeated.exit_code == 0, repeated.output
+    assert "already exists" in repeated.output
