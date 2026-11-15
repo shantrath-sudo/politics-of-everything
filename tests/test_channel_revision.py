@@ -40,6 +40,11 @@ def test_final_video_rejection_reopens_script_and_invalidates_old_render(tmp_pat
     store.transition(project_id, "script_approved")
     store.transition(project_id, "production_ready", artifact="/tmp/production-manifest.json")
     store.transition(project_id, "final_pending", artifact="/tmp/final.mp4")
+    package = tmp_path / "review-package"
+    package.mkdir()
+    delivery_manifest = package / "delivery_manifest.json"
+    delivery_manifest.write_text('{"published": false}')
+    store.record_delivery(project_id, package, delivery_manifest)
     record = store.request_revision(project_id, "The visual explanation of lobbying needs clearer examples.")
     assert record["stage"] == "research_ready"
     assert "production_manifest" not in record["artifacts"]
@@ -48,6 +53,10 @@ def test_final_video_rejection_reopens_script_and_invalidates_old_render(tmp_pat
     previous = record["revision_requests"][0]["previous_artifacts"]
     assert previous["final_video"] == "/tmp/final.mp4"
     assert previous["production_manifest"] == "/tmp/production-manifest.json"
+    assert previous["delivery_package"] == str(package)
+    assert previous["delivery_manifest"] == str(delivery_manifest)
+    assert "delivery_package" not in record["artifacts"]
+    assert "delivery_manifest" not in record["artifacts"]
 
 
 def test_revision_requires_feedback_and_an_approval_stage(tmp_path):
