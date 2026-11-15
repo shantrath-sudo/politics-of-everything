@@ -11,6 +11,13 @@ This is the one-time setup path. Do not run the scheduler until all checks below
 - Node.js and npm for the Remotion renderer
 - LM Studio 0.4.0 or newer, opened at least once, with its CLI bootstrapped
 
+If Homebrew is installed, the first three command-line tools can be installed together:
+
+    brew install uv ffmpeg node
+    uv python install 3.12
+
+Skip any package that is already installed. Install LM Studio separately from its official desktop app, open it once, and bootstrap its `lms` command-line tool.
+
 LM Studio's CLI is distributed with the desktop app. Its documented bootstrap and local model commands are at https://lmstudio.ai/docs/cli.
 
 ## 2. Install the local language model
