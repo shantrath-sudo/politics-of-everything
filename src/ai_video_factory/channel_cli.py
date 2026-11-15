@@ -80,7 +80,15 @@ def _publisher_domain(url: str) -> str | None:
     host = (urlsplit(url).hostname or "").lower().rstrip(".")
     while host.startswith(("www.", "m.", "mobile.", "amp.")):
         host = host.split(".", 1)[1]
-    return host or None
+    aliases = {
+        "bbc.co.uk": "bbc",
+        "bbc.com": "bbc",
+        "apnews.com": "ap",
+        "ap.org": "ap",
+        "theguardian.com": "guardian",
+        "guardian.co.uk": "guardian",
+    }
+    return aliases.get(host, host) or None
 
 
 def _research_project(project_id: str, model_id: str) -> dict:
