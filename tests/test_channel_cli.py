@@ -190,15 +190,14 @@ def test_start_pilot_creates_preapproved_project_from_reliable_sources(tmp_path,
     monkeypatch.setattr(channel_cli, "DATA", tmp_path / "data" / "channel")
     config_dir = tmp_path / "config"
     config_dir.mkdir()
-    (config_dir / "pilot-topic.toml").write_text(
-        'title = "Who Really Controls a Democracy?\\n"'
-        'candidate_id = "pilot-democracy"\\n'
-        'summary = "An evidence-led documentary about democratic power."\\n'
-        'research_queries = ["democracy institutions", "India parliament accountability"]\\n'
-        'topic_terms = ["democracy", "parliament", "power"]\\n'
-        'max_sources = 6\\n'
-        'minimum_reliable_domains = 2\\n'
-    )
+    (config_dir / "pilot-topic.toml").write_text("""title = "Who Really Controls a Democracy?"
+candidate_id = "pilot-democracy"
+summary = "An evidence-led documentary about democratic power."
+research_queries = ["democracy institutions", "India parliament accountability"]
+topic_terms = ["democracy", "parliament", "power"]
+max_sources = 6
+minimum_reliable_domains = 2
+""")
     candidates = [
         TopicCandidate(
             candidate_id="lead111",
