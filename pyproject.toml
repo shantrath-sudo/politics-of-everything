@@ -11,7 +11,7 @@ dependencies = [
 
 [project.scripts]
 ai-video-factory = "ai_video_factory.cli:app"
-poe = "ai_video_factory.channel_cli:app"
+politics-channel = "ai_video_factory.channel_cli:app"
 
 [project.optional-dependencies]
 youtube = [
