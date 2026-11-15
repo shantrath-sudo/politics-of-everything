@@ -46,7 +46,10 @@ def test_session_loads_and_unloads_only_its_model():
     assert session.started_model is True
     session.stop()
     assert calls[0][1] == "load"
-    assert calls[-1] == ["lms", "unload", "poe-qwen35-4b"]
+    assert posts == [(
+        "http://127.0.0.1:1234/api/v1/models/unload",
+        {"instance_id": "poe-qwen35-4b"},
+    )]
     assert session.started_model is False
 
 
