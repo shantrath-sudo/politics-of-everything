@@ -21,7 +21,7 @@ One English documentary every Sunday, 10–15 minutes, professional documentary 
 - Saturday: render, captions, audio mix and technical/editorial QA.
 - Sunday: final MP4 and complete package delivered for human approval.
 
-If a gate is blocked, pause and report the blocker. Never skip a gate or use fabricated filler to meet the calendar.
+If a gate is blocked, pause and report the blocker. Never skip a gate or use fabricated filler to meet the calendar. Before rendering, require at least 12 GiB of free disk space; never auto-delete user media to make room.
 
 ## Daily scouting
 Collect international and India-relevant signals from public news/RSS sources, primary institutions, research releases and evergreen questions. Resolve RSS redirects to original HTTPS publisher articles; discard links that cannot be safely resolved. Cluster duplicates. Score each idea for channel relevance, evidence/source availability, originality signals, international relevance, India relevance where substantive, visual/story potential, feasibility for 10–15 minutes, and recency/public interest. Scores prioritise investigation; they do not establish truth or grant editorial approval. Maintain a topic ledger and record final approved topics to avoid repeats.
