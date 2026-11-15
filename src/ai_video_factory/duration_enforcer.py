@@ -109,7 +109,7 @@ Retention device: {_ENCORE_SPEC.retention}
 
 Requirements:
 - CRITICAL: write EXACTLY {scene_target} scene(s) totaling AT LEAST {deficit_words} words of narration.
-- Each scene: a short title, narration (110-190 words), a visual_direction, and optionally a lower_third.
+- Each scene: a short title, narration (60-125 words), a visual_direction, and optionally a lower_third.
 {context}
 Output JSON only, exactly this shape:
 {{"scenes": [{{"title": str, "narration": str, "visual_direction": str, "lower_third": str | null}}]}}"""
@@ -147,7 +147,7 @@ def _extend_beat(
     beat. Returns the new scenes to append.
     """
     spec = beat.spec
-    scene_target = max(1, round(deficit_words / 150))
+    scene_target = max(1, round(deficit_words / 105))
     prompt = _extension_user_prompt(
         spec=spec,
         scenes=beat.scenes,
