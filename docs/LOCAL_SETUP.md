@@ -9,7 +9,7 @@ This is the one-time setup path. Do not run the scheduler until all checks below
 - uv
 - FFmpeg and ffprobe
 - Node.js and npm for the Remotion renderer
-- LM Studio, opened at least once, with its CLI bootstrapped
+- LM Studio 0.4.0 or newer, opened at least once, with its CLI bootstrapped
 
 LM Studio's CLI is distributed with the desktop app. Its documented bootstrap and local model commands are at https://lmstudio.ai/docs/cli.
 
@@ -66,7 +66,7 @@ The channel uses a small macOS-specific LM Studio controller. It:
 - unloads only the model it loaded itself
 - does not update or replace LM Studio runtimes
 
-The controller never uploads prompts or source material to a hosted API.
+Keep the LM Studio server on its default localhost binding; do not enable LAN/network sharing. The local integration assumes authentication is disabled for this loopback-only service. The controller never uploads prompts or source material to a hosted API.
 
 ## 6. First verification
 
