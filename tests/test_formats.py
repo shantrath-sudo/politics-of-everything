@@ -98,8 +98,8 @@ def test_format_drives_beats_and_word_budget():
         "cold_open", "rise", "throne", "turn", "fall",
         "verdict", "lesson", "outro",
     ]
-    targets = [beat_word_target(b, 25.0) for b in beats]
-    assert sum(targets) == pytest.approx(25.0 * 150, abs=10)
+    targets = [beat_word_target(b, 12.5) for b in beats]
+    assert sum(targets) == pytest.approx(12.5 * 150, abs=10)
     # cold open carries the 3-beat hook plan in its retention device
     assert "0:00-0:10" in beats[0].retention
 
@@ -107,17 +107,17 @@ def test_format_drives_beats_and_word_budget():
 def test_format_script_end_to_end():
     preset = get_preset("business_autopsy")
     beats = _beats_for_format(preset)
-    targets = [beat_word_target(b, 25.0) for b in beats]
+    targets = [beat_word_target(b, 12.5) for b in beats]
     script = generate_longform_script(
         topic="BlackBerry",
         description="rise and fall",
         source_url="https://www.nasa.gov", verify_source_urls=False,
-        target_minutes=25.0,
+        target_minutes=12.5,
         chat_fn=_fake_chat_factory(targets),
         format_key="business_autopsy",
     )
     assert script.format_key == "business_autopsy"
-    assert abs(script.estimated_minutes - 25.0) < 0.2
+    assert abs(script.estimated_minutes - 12.5) < 0.2
     payload = json.loads(script.to_json())
     assert payload["format_key"] == "business_autopsy"
 
