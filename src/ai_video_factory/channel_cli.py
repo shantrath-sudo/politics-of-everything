@@ -75,6 +75,36 @@ def _project_dir(project_id: str) -> Path:
     return DATA / "projects" / project_id
 
 
+def _validate_review_package(record: dict) -> None:
+    artifacts = record.get("artifacts") or {}
+    package_path = Path(artifacts.get("delivery_package", ""))
+    manifest_path = Path(artifacts.get("delivery_manifest", ""))
+    final_video = Path(artifacts.get("final_video", ""))
+    if not package_path.is_dir() or not manifest_path.is_file() or not final_video.is_file():
+        raise ChannelWorkflowError(
+            "final approval is available only after the private Sunday review package has been delivered"
+        )
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ChannelWorkflowError(f"delivery manifest is unreadable: {error}") from error
+    if manifest.get("project_id") != record.get("project_id"):
+        raise ChannelWorkflowError("delivery manifest belongs to a different project")
+    if manifest.get("published") is not False or manifest.get("final_approval_required") is not True:
+        raise ChannelWorkflowError("delivery manifest has an invalid publication or approval state")
+    files = manifest.get("files") or {}
+    required = {"final_video", "production_manifest", "script", "research_dossier"}
+    missing_labels = sorted(required - set(files))
+    missing_files = [path for path in files.values() if not Path(path).exists()]
+    if missing_labels or missing_files:
+        details = []
+        if missing_labels:
+            details.append("missing package entries: " + ", ".join(missing_labels))
+        if missing_files:
+            details.append("missing files: " + ", ".join(missing_files))
+        raise ChannelWorkflowError("review package is incomplete (" + "; ".join(details) + ")")
+
+
 def _publisher_domain(url: str) -> str | None:
     """Normalize common publisher subdomains before counting independent sources."""
     host = (urlsplit(url).hostname or "").lower().rstrip(".")
@@ -390,13 +420,7 @@ def approve_final(project_id: str = typer.Argument(...)) -> None:
     """Record final editorial approval. This command never publishes the video."""
     try:
         current = _store().get(project_id)
-        package_path = Path((current.get("artifacts") or {}).get("delivery_package", ""))
-        delivery_manifest = Path((current.get("artifacts") or {}).get("delivery_manifest", ""))
-        final_video = Path((current.get("artifacts") or {}).get("final_video", ""))
-        if not package_path.is_dir() or not delivery_manifest.is_file() or not final_video.is_file():
-            raise ChannelWorkflowError(
-                "final approval is available only after the private Sunday review package has been delivered"
-            )
+        _validate_review_package(current)
         record = _store().transition(project_id, "final_approved")
         topic_ledger = TopicLedger(DATA / "topics.jsonl")
         topic_ledger.add("politics-of-everything", record["topic"]["title"], run_id=project_id)
