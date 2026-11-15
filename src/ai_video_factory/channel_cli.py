@@ -483,6 +483,7 @@ def submit_script(
         if not isinstance(payload, dict) or not payload.get("beats"):
             raise ChannelWorkflowError("submitted script JSON must contain a non-empty beats array")
         markdown_path = _project_dir(project_id) / "script-manual.md"
+        markdown_path.parent.mkdir(parents=True, exist_ok=True)
         markdown_path.write_text(_render_script_markdown(script_json), encoding="utf-8")
         record = _store().transition(project_id, "script_pending", artifact=path)
         record = _store().attach_artifact(project_id, "script_markdown", markdown_path)
