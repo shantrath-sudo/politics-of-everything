@@ -37,7 +37,7 @@ def test_loads_checked_in_lm_studio_configuration(project_root: Path) -> None:
     assert config.backend == "lm_studio"
     assert config.base_url == "http://127.0.0.1:1234/v1"
     assert config.lms_binary == "lms"
-    assert config.model_key == "lmstudio-community/Qwen3.5-4B-GGUF/Qwen3.5-4B-Q4_K_M.gguf"
+    assert config.model_key == "lmstudio-community/Qwen3.5-4B-GGUF"
     assert config.identifier == "poe-qwen35-4b"
     assert config.context_length == 16_384
     assert config.gpu == "max"
