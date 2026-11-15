@@ -5,6 +5,10 @@ AGENT_DIR="$HOME/Library/LaunchAgents"
 UID_VALUE="$(id -u)"
 DOMAIN="gui/$UID_VALUE"
 cd "$PROJECT_ROOT"
+if [[ "$(date +%z)" != "+0530" ]]; then
+  echo "Set the Mac time zone to Asia/Kolkata (UTC+05:30) before installing; launchd calendar schedules use the system time zone." >&2
+  exit 1
+fi
 mkdir -p "$AGENT_DIR" "$PROJECT_ROOT/data/logs"
 
 FREE_GIB="$(df -Pk "$HOME" | awk 'NR==2 {printf "%.1f", $4/1024/1024}')"
