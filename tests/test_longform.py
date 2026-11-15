@@ -364,5 +364,5 @@ def test_longform_bookend_cards_use_documentary_title():
     assert doc.scenes[-1].kind == "outro"
     assert doc.scenes[-1].title == script.title
     # Middle scenes keep their creative titles.
-    assert doc.scenes[1].title == script.beats[0].scenes[1].title
+    assert doc.scenes[1].title == script.beats[1].scenes[0].title
     assert doc.scenes[1].title != script.title
