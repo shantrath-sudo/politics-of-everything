@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 from urllib.error import HTTPError
 from urllib.parse import urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, date, datetime
 from email.utils import parsedate_to_datetime
@@ -270,14 +271,22 @@ def scout_topics(
     clusters.sort(key=lambda c: (c.score, c.source_diversity, c.recency), reverse=True)
     resolved: list[TopicCandidate] = []
     for candidate in clusters:
-        direct_urls: list[str] = []
-        for article_url in candidate.article_urls[:8]:
-            try:
-                direct = resolver(article_url)
-            except Exception:
-                continue
-            if direct not in direct_urls:
-                direct_urls.append(direct)
+        article_urls = candidate.article_urls[:4]
+        direct_by_index: dict[int, str] = {}
+        with ThreadPoolExecutor(max_workers=min(8, max(1, len(article_urls)))) as pool:
+            futures = {
+                pool.submit(resolver, article_url): index
+                for index, article_url in enumerate(article_urls)
+            }
+            for future in as_completed(futures):
+                try:
+                    direct_by_index[futures[future]] = future.result()
+                except Exception:
+                    continue
+        direct_urls = list(dict.fromkeys(
+            direct_by_index[index]
+            for index in sorted(direct_by_index)
+        ))
         if not direct_urls:
             continue
         candidate.article_urls = direct_urls
