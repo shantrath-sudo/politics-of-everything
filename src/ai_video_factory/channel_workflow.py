@@ -175,6 +175,7 @@ def _resolve_article_url(url: str) -> str:
 
 FEED_EDITIONS = (
     ("en-IN", "IN", "IN:en"),
+    ("en-GB", "GB", "GB:en"),
     ("en-US", "US", "US:en"),
 )
 
