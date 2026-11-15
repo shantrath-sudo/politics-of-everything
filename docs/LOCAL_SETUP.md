@@ -48,6 +48,7 @@ Then run:
 This installs Python dependencies and Kokoro if not already installed, checks the CLI, and registers:
 - daily topic scouting at 08:00 Asia/Kolkata
 - approval-gated workflow advancement every four hours
+- private final-review package assembly every Sunday at 09:00
 
 The Mac must be awake and the user session available. Logs are stored under data/logs/.
 
