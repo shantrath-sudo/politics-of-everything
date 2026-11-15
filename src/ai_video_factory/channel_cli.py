@@ -532,14 +532,35 @@ def status() -> None:
     if not records:
         typer.echo("No documentary projects have been selected.")
     for record in records:
+        project_id = record["project_id"]
+        stage = record["stage"]
         typer.echo(
-            f"{record['project_id']} | {record['stage']} | "
+            f"{project_id} | {stage} | "
             f"{record['topic'].get('title', 'Untitled')}"
         )
+        artifacts = record.get("artifacts") or {}
+        if stage == "script_pending":
+            typer.echo(f"  Script awaiting approval: {artifacts.get('script', 'not recorded')}")
+            typer.echo(f"  Research dossier: {artifacts.get('research_dossier', 'not recorded')}")
+        elif stage == "final_pending":
+            typer.echo(f"  Final video awaiting approval: {artifacts.get('final_video', 'not recorded')}")
+            typer.echo(f"  Production manifest: {artifacts.get('production_manifest', 'not recorded')}")
+        metadata_path = _project_dir(project_id) / "research" / "editorial_metadata.json"
+        if metadata_path.is_file():
+            try:
+                metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+                if metadata.get("flagged_for_human_review"):
+                    typer.echo("  HUMAN REVIEW REQUIRED:")
+                    for reason in metadata.get("review_reasons", []):
+                        typer.echo(f"    - {reason}")
+            except (OSError, json.JSONDecodeError):
+                typer.echo("  Warning: editorial metadata could not be read.", err=True)
     reports = sorted((DATA / "scouting").glob("*.json")) if (DATA / "scouting").is_dir() else []
     if reports:
         latest = json.loads(reports[-1].read_text(encoding="utf-8"))
         typer.echo(f"Latest scouting report: {reports[-1].name} ({latest.get('candidate_count', 0)} candidates)")
+        typer.echo(f"Readable shortlist: {reports[-1].with_suffix('.md')}")
+    typer.echo("Publishing: disabled. No YouTube upload has been performed.")
 
 
 if __name__ == "__main__":
