@@ -187,7 +187,7 @@ def _render_script_markdown(script_json: str) -> str:
     for beat in data.get("beats", []):
         lines.extend([
             f"## {beat.get('label') or beat.get('key', 'Chapter')}",
-            f"<text>{beat.get('words', 0)} words</text>",
+            f"*{beat.get('words', 0)} words*",
             "",
         ])
         for scene in beat.get("scenes", []):
