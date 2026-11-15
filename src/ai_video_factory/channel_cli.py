@@ -145,6 +145,14 @@ def _draft_project_script(project_id: str, model_id: str) -> dict:
         raise ChannelWorkflowError(f"{project_id}: script drafting requires research_ready, got {record['stage']}")
     candidate = record["topic"]
     research_brief = Path(record["artifacts"]["research_dossier"]).read_text(encoding="utf-8")
+    revision_feedback = (record.get("pending_revision_feedback") or "").strip()
+    if revision_feedback:
+        research_brief += (
+            "\\n\\nEDITOR REVISION REQUEST (must be addressed):\\n"
+            + revision_feedback
+            + "\\nPreserve verified facts, citations, neutrality and the 10–15 minute runtime. "
+              "Do not invent evidence to satisfy feedback."
+        )
     urls = list(dict.fromkeys(candidate.get("article_urls") or [candidate["url"]]))
     from ai_video_factory.longform import generate_longform_script, check_topic_adherence, _lm_studio_chat
     chat_fn = lambda messages, max_tokens: _lm_studio_chat(messages, max_tokens, model=model_id)
@@ -313,6 +321,21 @@ def submit_script(
     try:
         record = _store().transition(project_id, "script_pending", artifact=path)
         typer.echo(f"Script submitted for review: {project_id} ({record['stage']})")
+    except ChannelWorkflowError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=2)
+
+
+@app.command("request-revision")
+def request_revision(
+    project_id: str = typer.Argument(...),
+    feedback: str = typer.Argument(..., help="Specific changes required; maximum 2000 characters"),
+) -> None:
+    """Reject a script/final video and return the project to a revision cycle."""
+    try:
+        record = _store().request_revision(project_id, feedback)
+        typer.echo(f"Revision #{record['revision_count']} requested: {project_id}")
+        typer.echo("The next scheduled advance will regenerate the script and pause for approval.")
     except ChannelWorkflowError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(code=2)
