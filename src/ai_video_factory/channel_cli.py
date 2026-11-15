@@ -533,8 +533,18 @@ def deliver(
         project_dir = _project_dir(project_id)
         manifest_path = Path(record["artifacts"]["production_manifest"])
         master_path = Path(record["artifacts"]["final_video"])
-        if not manifest_path.is_file() or not master_path.is_file():
-            typer.echo(f"{project_id}: review package incomplete; missing manifest or master MP4", err=True)
+        script_path = Path(record["artifacts"].get("script", ""))
+        research_dir = project_dir / "research"
+        if (
+            not manifest_path.is_file()
+            or not master_path.is_file()
+            or not script_path.is_file()
+            or not (research_dir / "research_brief.md").is_file()
+        ):
+            typer.echo(
+                f"{project_id}: review package incomplete; missing master, production manifest, script or research dossier",
+                err=True,
+            )
             continue
         destination = DATA / "deliveries" / today.isoformat() / project_id
         if destination.exists():
