@@ -28,8 +28,8 @@ from ai_video_factory.sanitization import sanitize_diagnostic
 
 
 WORDS_PER_MINUTE = 150
-MIN_LONGFORM_MINUTES = 20
-MAX_LONGFORM_MINUTES = 30
+MIN_LONGFORM_MINUTES = 10
+MAX_LONGFORM_MINUTES = 15
 # Reasoning models spend a large share of their token budget thinking
 # before they write. Beats budget content tokens plus thinking headroom,
 # and retry once on empty/truncated output, so a thinking model can never
@@ -37,7 +37,7 @@ MAX_LONGFORM_MINUTES = 30
 BEAT_MIN_TOKENS = 8192
 BEAT_TOKEN_HEADROOM = 4
 BEAT_ATTEMPTS = 2
-DEFAULT_LONGFORM_MINUTES = 25.0
+DEFAULT_LONGFORM_MINUTES = 12.5
 
 
 class LongformError(RuntimeError):
@@ -211,7 +211,7 @@ Rules:
 - Write narration only, no stage directions outside the visual_direction field.
 - Ground claims in the provided research; never invent facts, quotes, or statistics.
 - Vary sentence rhythm: punchy fragments for tension, longer sweeps for wonder.
-- Each scene's narration should run 45-75 seconds when spoken (110-190 words).
+- Each scene's narration should run roughly 25-50 seconds when spoken (60-125 words).
 - Output ONLY valid JSON, no markdown fences, no commentary."""
 
 
@@ -244,7 +244,7 @@ Retention device: {spec.retention}
 Requirements:
 - CRITICAL: Write AT LEAST {word_target} words of narration total across the beat. Do not write less.
 - Exactly {scene_target} scenes.
-- Each scene: a short title, narration (110-190 words), a visual_direction \
+- Each scene: a short title, narration (60-125 words), a visual_direction \
 describing what the viewer sees (archival footage, NASA imagery, data visualization, \
 dramatic reenactment description, etc.), and optionally a lower_third (a name, \
 date, or location to display on screen, or null).
@@ -607,7 +607,7 @@ def generate_longform_script(
     previous_titles: list[str] = []
     for spec in beats:
         word_target = beat_word_target(spec, target_minutes)
-        scene_target = max(2, round(word_target / 150))
+        scene_target = max(1, round(word_target / 105))
         prompt = _beat_user_prompt(
             spec=spec,
             bible=bible,
