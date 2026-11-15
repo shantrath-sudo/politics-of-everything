@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 from ai_video_factory.channel_workflow import ChannelWorkflowError, TopicCandidate, WorkflowStore
 
@@ -53,8 +54,13 @@ def test_final_video_rejection_reopens_script_and_invalidates_old_render(tmp_pat
     previous = record["revision_requests"][0]["previous_artifacts"]
     assert previous["final_video"] == "/tmp/final.mp4"
     assert previous["production_manifest"] == "/tmp/production-manifest.json"
-    assert previous["delivery_package"] == str(package)
-    assert previous["delivery_manifest"] == str(delivery_manifest)
+    archived_package = Path(previous["delivery_package"])
+    assert archived_package != package
+    assert archived_package.is_dir()
+    assert (archived_package / "delivery_manifest.json").is_file()
+    assert not package.exists()
+    assert previous["delivery_manifest"] == str(archived_package / "delivery_manifest.json")
+    assert record["history"][-1]["archived_delivery_package"] == str(archived_package)
     assert "delivery_package" not in record["artifacts"]
     assert "delivery_manifest" not in record["artifacts"]
 
