@@ -115,3 +115,69 @@ def test_script_markdown_renderer_creates_readable_chapters_and_sources():
     assert "The ballot box" in markdown
     assert "Visual direction" in markdown
     assert "https://www.idea.int/example" in markdown
+
+
+
+def test_submit_script_creates_readable_markdown_companion(tmp_path, monkeypatch):
+    monkeypatch.setattr(channel_cli, "DATA", tmp_path / "data")
+    project_id = "poe-20261115-manual1"
+    store = WorkflowStore(channel_cli.DATA / "projects")
+    candidate = TopicCandidate(
+        candidate_id="manual1",
+        title="Manual documentary script",
+        summary="A test script.",
+        url="https://www.idea.int/example",
+    )
+    store.create(project_id, candidate)
+    store.transition(project_id, "topic_approved")
+    store.transition(project_id, "research_ready", artifact="/tmp/research.md")
+    source = tmp_path / "manual-script.json"
+    source.write_text(json.dumps({
+        "title": "Manual documentary script",
+        "topic": "Power",
+        "description": "Test",
+        "estimated_minutes": 12,
+        "target_minutes": 12,
+        "total_words": 100,
+        "beats": [{
+            "label": "Opening",
+            "words": 100,
+            "scenes": [{"title": "The question", "narration": "Who decides?"}],
+        }],
+        "sources": ["https://www.idea.int/example"],
+    }))
+    result = CliRunner().invoke(channel_cli.app, ["submit-script", project_id, str(source)])
+    assert result.exit_code == 0, result.output
+    record = store.get(project_id)
+    markdown = Path(record["artifacts"]["script_markdown"])
+    assert markdown.is_file()
+    assert "# Manual documentary script" in markdown.read_text()
+
+
+def test_script_approval_requires_json_and_markdown_companions(tmp_path, monkeypatch):
+    monkeypatch.setattr(channel_cli, "DATA", tmp_path / "data")
+    project_id = "poe-20261115-script1"
+    store = WorkflowStore(channel_cli.DATA / "projects")
+    candidate = TopicCandidate(
+        candidate_id="script1",
+        title="Script approval test",
+        summary="A test script.",
+        url="https://www.idea.int/example",
+    )
+    store.create(project_id, candidate)
+    store.transition(project_id, "topic_approved")
+    store.transition(project_id, "research_ready", artifact="/tmp/research.md")
+    script = tmp_path / "script.json"
+    script.write_text('{"beats": []}')
+    store.transition(project_id, "script_pending", artifact=str(script))
+
+    blocked = CliRunner().invoke(channel_cli.app, ["approve-script", project_id])
+    assert blocked.exit_code == 2
+    assert "readable Markdown script files" in blocked.output
+
+    markdown = tmp_path / "script.md"
+    markdown.write_text("# Readable script")
+    store.attach_artifact(project_id, "script_markdown", markdown)
+    approved = CliRunner().invoke(channel_cli.app, ["approve-script", project_id])
+    assert approved.exit_code == 0, approved.output
+    assert store.get(project_id)["stage"] == "script_approved"
