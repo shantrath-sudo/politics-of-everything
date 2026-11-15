@@ -53,5 +53,6 @@ def test_status_shows_approval_paths_and_sensitive_review_flags(tmp_path, monkey
 
 def test_publisher_domain_collapses_common_subdomains():
     assert channel_cli._publisher_domain("https://www.reuters.com/world/story") == "reuters.com"
-    assert channel_cli._publisher_domain("https://m.bbc.co.uk/news/story") == "bbc.co.uk"
+    assert channel_cli._publisher_domain("https://m.bbc.co.uk/news/story") == "bbc"
+    assert channel_cli._publisher_domain("https://bbc.com/news/story") == "bbc"
     assert channel_cli._publisher_domain("https://example.org/story") == "example.org"
