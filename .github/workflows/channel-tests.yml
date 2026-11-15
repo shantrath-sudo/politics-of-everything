@@ -25,6 +25,11 @@ jobs:
           python-version: "3.12"
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+      - name: Check zsh launcher syntax
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh
+          zsh -n scripts/*.sh
       - name: Install project and test dependencies
         run: uv sync --dev --extra tts
       - name: Compile Python source
