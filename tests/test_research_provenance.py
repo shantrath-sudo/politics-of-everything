@@ -320,13 +320,13 @@ def test_build_claims_from_records_requires_two_distinct_sources():
             id="rec-001", url="https://nasa.gov/europa-clipper", label="confirmed fact",
             claim="Europa has a subsurface ocean.", evidence_quote="subsurface ocean"),
         EvidenceRecord(
-            id="rec-002", url="https://nasa.gov/juno", label="reported claim",
+            id="rec-002", url="https://reuters.com/world/europa", label="reported claim",
             claim="Europa has a subsurface ocean.", evidence_quote="subsurface ocean"),
     ]
     claims = _build_claims_from_records(records)
     assert len(claims) == 1
     assert claims[0].source_ids == [
-        "https://nasa.gov/europa-clipper", "https://nasa.gov/juno"]
+        "https://nasa.gov/europa-clipper", "https://reuters.com/world/europa"]
     assert claims[0].provisional_classification == "confirmed fact"
 
     # The same claim from a single URL is NOT corroborated (one source only).
