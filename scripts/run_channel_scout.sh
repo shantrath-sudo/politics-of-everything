@@ -11,4 +11,4 @@ if [[ -z "$UV_BIN" ]]; then
 fi
 mkdir -p "$PROJECT_ROOT/data/logs"
 cd "$PROJECT_ROOT"
-"$UV_BIN" run --project "$PROJECT_ROOT" politics-channel scout --limit 20
+"$UV_BIN" run --project "$PROJECT_ROOT" --extra tts politics-channel scout --limit 20
