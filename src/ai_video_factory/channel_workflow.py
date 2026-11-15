@@ -173,15 +173,26 @@ def _resolve_article_url(url: str) -> str:
     return resolved
 
 
-def _read_feed(query: str, transport: Transport) -> list[dict[str, str]]:
-    params = urllib.parse.urlencode({
-        "q": query, "hl": "en-US", "gl": "US", "ceid": "US:en",
-    })
+FEED_EDITIONS = (
+    ("en-IN", "IN", "IN:en"),
+    ("en-US", "US", "US:en"),
+)
+
+
+def _read_feed(
+    query: str,
+    transport: Transport,
+    edition: tuple[str, str, str] = ("en-IN", "IN", "IN:en"),
+) -> list[dict[str, str]]:
+    hl, gl, ceid = edition
+    params = urllib.parse.urlencode({"q": query, "hl": hl, "gl": gl, "ceid": ceid})
     url = f"https://news.google.com/rss/search?{params}"
     try:
         root = ET.fromstring(transport(url))
     except Exception as error:
-        raise ChannelWorkflowError(f"could not parse RSS results for {query!r}: {error}") from error
+        raise ChannelWorkflowError(
+            f"could not parse RSS results for {query!r} ({gl} edition): {error}"
+        ) from error
     rows = []
     for item in root.findall(".//item"):
         title = (item.findtext("title") or "").strip()
@@ -226,11 +237,18 @@ def scout_topics(
 
     rows: list[dict[str, str]] = []
     failures: list[str] = []
-    for query in queries:
-        try:
-            rows.extend(_read_feed(query, transport))
-        except Exception as error:
-            failures.append(str(error))
+    # Run India and international editions concurrently so daily scouting stays bounded.
+    with ThreadPoolExecutor(max_workers=min(8, max(1, len(queries) * len(FEED_EDITIONS)))) as pool:
+        futures = {
+            pool.submit(_read_feed, query, transport, edition): (query, edition)
+            for query in queries
+            for edition in FEED_EDITIONS
+        }
+        for future in as_completed(futures):
+            try:
+                rows.extend(future.result())
+            except Exception as error:
+                failures.append(str(error))
     if not rows and failures:
         raise ChannelWorkflowError("all topic RSS queries failed: " + "; ".join(failures))
 
