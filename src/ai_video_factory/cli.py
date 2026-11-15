@@ -523,36 +523,6 @@ def _upload_for_channel(config, youtube_dir: Path, data_root: Path, dry_run: boo
     return _upload
 
 
-@app.command("channel-scout")
-def channel_scout(
-    limit: int = typer.Option(20, "--limit", min=1, max=100, help="Maximum topic leads to report"),
-    output: str = typer.Option(None, "--output", help="Optional JSON report path"),
-) -> None:
-    """Discover and score politics, power, economy, society and geopolitics topic leads."""
-    from datetime import datetime
-    from ai_video_factory.channel_scout import scout_topics, write_scout_report
-    from ai_video_factory.scheduler import TopicLedger
-
-    ledger = TopicLedger(_DATA_ROOT / "channel" / "topics.jsonl")
-    try:
-        topics = scout_topics(limit=limit, topic_ledger=ledger)
-        stamp = datetime.now().strftime("%Y-%m-%d")
-        report_path = Path(output) if output else (
-            _DATA_ROOT / "channel" / "scouting" / f"{stamp}.json"
-        )
-        saved = write_scout_report(topics, report_path)
-    except Exception as error:
-        typer.echo(f"Topic scouting failed: {sanitize_diagnostic(error)}", err=True)
-        raise typer.Exit(code=2)
-    typer.echo(json.dumps({
-        "channel": "Politics of Everything",
-        "status": "leads_only_not_approved",
-        "count": len(topics),
-        "report": str(saved),
-        "topics": [item.to_dict() for item in topics],
-    }, indent=2, ensure_ascii=False))
-
-
 @scheduler_app.command("run")
 def scheduler_run(
     channels_config: str = typer.Option(None, "--channels-config", help="Path to channels TOML (default: config/channels.toml)"),
