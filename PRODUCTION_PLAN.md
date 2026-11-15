@@ -3,22 +3,30 @@
 ## Output
 One English documentary every Sunday, 10–15 minutes, professional documentary motion-graphics style. International audience; special focus on India. Non-partisan, evidence-led, accessible and intellectually rigorous.
 
-## Weekly schedule (Asia/Kolkata)
-- Monday: review topic shortlist; select one topic and approve central question.
-- Tuesday: finish research dossier and source collection.
+## Automated local schedule (Asia/Kolkata)
+- Daily at 08:00: collect and score topic leads from public RSS sources; save a dated shortlist.
+- Every 4 hours: inspect project state and run only the next eligible non-approval stage.
+- When research or script generation is due: start the configured local inference model if it is not already resident; unload it after the run only if this controller started it.
+- If a stage fails, preserve the previous state, log the blocker and retry on a later run.
+- Never cross topic, script or final-video approval gates automatically.
+- macOS launchd runs only while the user session is available; missed calendar jobs are resumed when the Mac wakes.
+
+## Weekly editorial schedule
+- Monday: review shortlist; select one topic and approve the central question.
+- Tuesday: complete research dossier and source collection.
 - Wednesday: create script and claim ledger; run fact-check.
-- Thursday: deliver script/storyboard for human approval.
+- Thursday: review and approve script/storyboard.
 - Friday: narration, visual acquisition and original motion graphics.
 - Saturday: render, captions, audio mix and technical/editorial QA.
-- Sunday: deliver final MP4 and complete package for human approval.
+- Sunday: final MP4 and complete package delivered for human approval.
 
 If a gate is blocked, pause and report the blocker. Never skip a gate or use fabricated filler to meet the calendar.
 
 ## Daily scouting
-Collect international and India-relevant signals from public news/RSS sources, primary institutions, research releases and evergreen questions. Cluster duplicates. Score each idea for relevance, evidence quality, originality, international relevance, India relevance where substantive, visual/story potential, feasibility for 10–15 minutes, and recency/public interest (each 0–5). Scores prioritise investigation; they do not establish truth or grant editorial approval. Maintain a topic ledger.
+Collect international and India-relevant signals from public news/RSS sources, primary institutions, research releases and evergreen questions. Resolve RSS redirects to original HTTPS publisher articles; discard links that cannot be safely resolved. Cluster duplicates. Score each idea for channel relevance, evidence/source availability, originality signals, international relevance, India relevance where substantive, visual/story potential, feasibility for 10–15 minutes, and recency/public interest. Scores prioritise investigation; they do not establish truth or grant editorial approval. Maintain a topic ledger and record final approved topics to avoid repeats.
 
 ## Research and writing
-Produce a research dossier and claim ledger before scripting. Runtime estimate uses measured narration and final render, not word count alone. Every material claim must be traceable. High-stakes or rapidly changing subjects require stronger verification and an explicit date cutoff.
+Require at least two distinct publisher domains. Fetch actual source content through the secure transport, extract claims with verbatim evidence, record sources/claims/contradictions/verified facts, and preserve content hashes. If independent corroboration is insufficient, stop. Produce the research dossier and claim ledger before scripting. Runtime estimate uses measured narration and final render, not word count alone. High-stakes or rapidly changing subjects require stronger verification and an explicit date cutoff.
 
 ## Production
 Use existing Remotion and FFmpeg. Prefer properly licensed real footage, public-domain assets with documented status, maps, data visualisations, timelines, typography and reusable original motion graphics. Synthetic assets are supplementary. Avoid large generative-video weights. Use local narration where quality is acceptable. Paid services require explicit approval.
