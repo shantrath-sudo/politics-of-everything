@@ -49,7 +49,19 @@ Commands:
     politics-channel approve-final PROJECT_ID
     politics-channel advance
 
-The advance command runs only non-approval stages and stops at every human gate. The final approval command only records editorial approval. It does not upload or publish.
+The advance command runs only non-approval stages and stops at every human gate. When research or writing is due, it starts the configured local model if needed and unloads it only if the automation started it. The final approval command only records editorial approval. It does not upload or publish.
+
+### macOS scheduling
+
+After local dependencies and the configured model are ready, install the two launchd jobs:
+
+    zsh scripts/install_launchd.sh
+
+This installs daily scouting at 08:00 and checks workflow progress every four hours. To remove the schedules without deleting project data:
+
+    zsh scripts/uninstall_launchd.sh
+
+The Mac must be awake and the user session available for local work. Logs are written to data/logs/. Do not install the schedules until the local model and media toolchain have passed their readiness checks.
 
 ### Production engine
 
