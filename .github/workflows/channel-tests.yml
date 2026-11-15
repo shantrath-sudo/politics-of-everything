@@ -35,6 +35,7 @@ jobs:
         run: >-
           uv run pytest -q
           tests/test_channel_workflow.py
+          tests/test_channel_delivery.py
           tests/test_mac_inference.py
           tests/test_longform.py
           tests/test_duration_enforcer.py
