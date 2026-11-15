@@ -44,3 +44,5 @@ jobs:
           tests/test_scheduler.py
           tests/test_inference_config.py
           tests/test_inference_service.py
+          tests/test_research_pipeline.py
+          tests/test_research_provenance.py
