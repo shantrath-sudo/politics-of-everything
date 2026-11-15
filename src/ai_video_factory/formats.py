@@ -1,4 +1,4 @@
-"""YouTube format presets: the winning 20-40 minute long-form formats.
+"""YouTube format presets: the 10-15 minute documentary formats.
 
 Derived from the 2026-09-18 format research (7 format blueprints, title
 formulas, hook structures, chapter cadence, pacing cheat-sheet). Each preset
@@ -60,7 +60,7 @@ _register(
         key="business_autopsy",
         label="Business Autopsy / Rise-and-Fall",
         tier=1,
-        target_minutes=(25.0, 40.0),
+        target_minutes=(10.0, 15.0),
         description=(
             "The peak-to-collapse story of a company or empire. Cold open "
             "with peak numbers, fall numbers, and irony; 8-12 chapters "
@@ -133,7 +133,7 @@ _register(
         key="systems_explainer",
         label="Systems Explainer",
         tier=1,
-        target_minutes=(15.0, 25.0),
+        target_minutes=(10.0, 15.0),
         description=(
             "A hidden system behind an everyday puzzle, explained layer by "
             "layer. 100% motion graphics and maps. Calm present-tense "
@@ -253,7 +253,7 @@ _register(
         key="mystery_deep_dive",
         label="Mystery Deep Dive",
         tier=2,
-        target_minutes=(20.0, 30.0),
+        target_minutes=(10.0, 15.0),
         description=(
             "Restrained, clinical narration over custom maps, timelines, and "
             "documents. Long chapters (5-6 min); pacing from within-chapter "
@@ -311,7 +311,7 @@ _register(
         key="armchair_true_crime",
         label="Armchair True Crime",
         tier=3,
-        target_minutes=(20.0, 35.0),
+        target_minutes=(10.0, 15.0),
         description=(
             "Narrator-led crime documentary. Archival photos, news clippings, "
             "animated maps. Strict human review gates: no invented cases, "
@@ -374,7 +374,7 @@ _register(
         key="horror_anthology",
         label="AI Horror / Story Anthology",
         tier=3,
-        target_minutes=(20.0, 60.0),
+        target_minutes=(10.0, 15.0),
         description=(
             "Escalating fictional stories with a payoff, twist, or reveal. "
             "Clearly labeled fiction. Escalation ladder: each story stranger "
