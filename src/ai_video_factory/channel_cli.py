@@ -584,6 +584,8 @@ def status() -> None:
             f"{record['topic'].get('title', 'Untitled')}"
         )
         artifacts = record.get("artifacts") or {}
+        if stage == "research_ready" and record.get("pending_revision_feedback"):
+            typer.echo(f"  Revision requested (#{record.get('revision_count', 1)}): {record['pending_revision_feedback']}")
         if stage == "script_pending":
             typer.echo(f"  Script awaiting approval: {artifacts.get('script', 'not recorded')}")
             typer.echo(f"  Research dossier: {artifacts.get('research_dossier', 'not recorded')}")
