@@ -80,4 +80,4 @@ The existing research pipeline, Remotion, FFmpeg, narration and quality-control 
 
 Requires Python 3.12 and the project's existing uv/FFmpeg/Remotion prerequisites. The repository CI runs the channel-critical tests on pushes to channel/bootstrap.
 
-See docs/IMPLEMENTATION_TRACKER.md for verified progress and outstanding work.
+See docs/LOCAL_SETUP.md for the one-time Mac setup, model and TTS installation, and launchd activation. See docs/IMPLEMENTATION_TRACKER.md for verified progress and outstanding work.
