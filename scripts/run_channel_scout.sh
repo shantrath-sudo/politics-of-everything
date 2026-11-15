@@ -13,5 +13,5 @@ mkdir -p "$PROJECT_ROOT/data/logs"
 cd "$PROJECT_ROOT"
 "$UV_BIN" run --project "$PROJECT_ROOT" --extra tts politics-channel scout --limit 20
 if command -v osascript >/dev/null 2>&1; then
-  osascript -e 'display notification "The daily topic shortlist is ready for review." with title "Politics of Everything"'
+  osascript -e 'display notification "The daily topic shortlist is ready for review." with title "Politics of Everything"' || true
 fi
