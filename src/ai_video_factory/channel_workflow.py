@@ -208,6 +208,7 @@ def scout_topics(
     now: datetime | None = None,
     limit: int = 20,
     ledger_path: Path | None = None,
+    resolver: Callable[[str], str] | None = None,
 ) -> list[TopicCandidate]:
     """Discover and rank political/economic/societal topics from public RSS.
 
@@ -217,6 +218,7 @@ def scout_topics(
         raise ValueError("limit must be at least 1")
     queries = queries or DEFAULT_QUERIES
     transport = transport or _transport
+    resolver = resolver or _resolve_article_url
     now = now or datetime.now(UTC)
     if now.tzinfo is None:
         now = now.replace(tzinfo=UTC)
