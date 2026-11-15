@@ -128,7 +128,7 @@ class MacInferenceSession:
             )
         return (getattr(result, "stdout", "") or "").strip()
 
-    def _models(self) -> list[str] | None:
+    def _models(self) -> list[tuple[str, str]] | None:
         try:
             payload = json.loads(self.http_get(f"{self.server_root}/api/v1/models", 5.0))
         except (OSError, URLError, TimeoutError, ValueError, MacInferenceError):
@@ -136,17 +136,17 @@ class MacInferenceSession:
         models = payload.get("models")
         if not isinstance(models, list):
             return None
-        loaded_ids: list[str] = []
+        loaded_instances: list[tuple[str, str]] = []
         for model in models:
-            if not isinstance(model, dict):
+            if not isinstance(model, dict) or not isinstance(model.get("key"), str):
                 continue
             instances = model.get("loaded_instances", [])
             if not isinstance(instances, list):
                 continue
             for instance in instances:
                 if isinstance(instance, dict) and isinstance(instance.get("id"), str):
-                    loaded_ids.append(instance["id"])
-        return loaded_ids
+                    loaded_instances.append((model["key"], instance["id"]))
+        return loaded_instances
 
     def _wait_for_server(self) -> list[str]:
         deadline = time.monotonic() + min(self.ready_timeout_seconds, 45.0)
@@ -170,11 +170,9 @@ class MacInferenceSession:
             self._run(["server", "start", "--port", "1234"])
             models = self._wait_for_server()
 
-        if self.identifier in models:
-            self.api_model_id = self.identifier
-            return self.api_model_id
-        if self.model_key in models:
-            self.api_model_id = self.model_key
+        configured_instances = [instance_id for model_key, instance_id in models if model_key == self.model_key]
+        if configured_instances:
+            self.api_model_id = configured_instances[0]
             return self.api_model_id
         if models:
             raise MacInferenceError(
@@ -193,13 +191,10 @@ class MacInferenceSession:
         while time.monotonic() < deadline:
             models = self._models()
             if models is not None:
-                if self.identifier in models:
+                configured_instances = [instance_id for model_key, instance_id in models if model_key == self.model_key]
+                if configured_instances:
                     self.started_model = True
-                    self.api_model_id = self.identifier
-                    return self.api_model_id
-                if self.model_key in models:
-                    self.started_model = True
-                    self.api_model_id = self.model_key
+                    self.api_model_id = configured_instances[0]
                     return self.api_model_id
             self.sleeper(self.poll_interval_seconds)
         raise MacInferenceError("loaded model did not appear in LM Studio /v1/models")
