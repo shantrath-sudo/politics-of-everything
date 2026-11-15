@@ -112,9 +112,11 @@ The automation stops at each editorial gate. Notifications tell you when action 
 
        politics-channel approve-script PROJECT_ID
 
-3. **Approve the final video.** When the final-render notification arrives, run `politics-channel status`. Watch the MP4 and inspect the review package. If it meets the channel standard, run:
+3. **Approve the final video.** The final-render notification means the MP4 is ready for preview. The system assembles the private review package on Sunday and sends a separate delivery notification. Only after that notification, run `politics-channel status`, inspect the complete package, and if it meets the channel standard, run:
 
        politics-channel approve-final PROJECT_ID
+
+   Final approval is deliberately blocked until the private review package exists.
 
 The Sunday delivery job assembles a private review folder under `data/deliveries/`. Final approval records your decision; it does not upload or publish anything. If you reject a script or video, do not approve it. Request a revision with a specific explanation:
 
