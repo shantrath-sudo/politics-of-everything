@@ -753,11 +753,11 @@ def review_reject(
 
 @app.command("nightly-batch")
 def nightly_batch(
-    topics: int = typer.Option(3, "--topics", help="Draft topics per night"),
+    topics: int = typer.Option(1, "--topics", help="Draft topics per night"),
     theme: str = typer.Option("generic", "--theme", help="Theming preset"),
     trend_source: str = typer.Option("all", "--trend-source", help="reddit, gnews, or all"),
     target_minutes: float = typer.Option(12.5, "--target-minutes", help="Target runtime per video (10-15 minutes)"),
-    format_key: str = typer.Option("business_autopsy", "--format", help="YouTube format preset"),
+    format_key: str = typer.Option("systems_explainer", "--format", help="YouTube format preset"),
     llm_url: str = typer.Option("http://localhost:8080/v1/chat/completions", "--llm-url", help="LLM chat completions URL"),
     date: str = typer.Option(None, "--date", help="Run date YYYY-MM-DD (default: today)"),
 ) -> None:
