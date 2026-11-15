@@ -18,12 +18,12 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 12 | Remotion/FFmpeg production profile | IN PROGRESS | Approved long-form script input, licensed Commons visuals and 12 GiB disk guard wired into renderer; no real Mac render yet |
 | 13 | Technical/editorial quality gates | IN PROGRESS | Existing QC pipeline retained; real documentary render and review required |
 | 14 | Sunday delivery package | IN PROGRESS | Private Sunday package assembly, MP4 hard-link/copy, research, script, captions and attribution tested; real render artifacts still need audit |
-| 15 | Daily/weekly macOS scheduling | IN PROGRESS | daily scouting, four-hour advancement and Sunday delivery launchd templates plus install/uninstall scripts committed; not installed or activated |
+| 15 | Daily/weekly macOS scheduling | IN PROGRESS | daily scouting, four-hour advancement and Sunday delivery launchd templates, install/uninstall scripts and macOS approval notifications committed; not installed or activated |
 | 16 | Pilot: Who Really Controls a Democracy? | PENDING | Requires researched dossier, approved script, render, QA and editor sign-off |
 | 17 | Operational activation | PENDING | Requires local setup, full rehearsal and explicit user go-ahead; publishing remains disabled |
 
 ## Verified CI
-The channel-critical GitHub Actions workflow passed after the research-pipeline changes. It includes topic discovery/workflow (India + international RSS editions), political excerpt selection, source/claim provenance, long-form duration, format, scheduler and inference configuration/service tests, plus Python compilation and CLI help smoke tests. This verifies repository code in CI; it does not prove a live Mac render, real-source research run, local model inference or local TTS.
+The channel-critical GitHub Actions workflow passed after the research-pipeline changes. It includes topic discovery/workflow (India + international RSS editions), political excerpt selection, source/claim provenance, long-form duration, format, scheduler and inference configuration/service tests, plus Python compilation, CLI help and zsh launcher syntax checks. This verifies repository code in CI; it does not prove a live Mac render, real-source research run, local model inference or local TTS.
 
 ## Fixed configuration
 - Channel: Politics of Everything
