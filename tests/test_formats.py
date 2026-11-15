@@ -35,7 +35,7 @@ def _fake_chat_factory(targets):
             for message in messages
             if "Exactly " in message["content"] and " scenes" in message["content"]
         )
-        scene_count = int(__import__("re").search(r"Exactly (\\d+) scenes", prompt).group(1))
+        scene_count = int(__import__("re").search("Exactly ([0-9]+) scenes", prompt).group(1))
         per_scene = max(45, target // scene_count)
         return json.dumps(
             {
