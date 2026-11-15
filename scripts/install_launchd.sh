@@ -38,7 +38,7 @@ if [[ -z "$LMS_BIN" ]]; then
   exit 127
 fi
 MODEL_KEY="$("$UV_BIN" run --project "$PROJECT_ROOT" --extra tts python -c 'import tomllib; print(tomllib.load(open("config/inference.toml", "rb"))["model_key"])')"
-"$LMS_BIN" load "$MODEL_KEY" --gpu max --context-length 16384 --estimate-only -y
+"$LMS_BIN" load "$MODEL_KEY" --gpu max --context-length 16384 --estimate-only
 
 for LABEL in scout advance delivery; do
   TEMPLATE="$PROJECT_ROOT/launchd/com.politics-of-everything.$LABEL.plist.template"
