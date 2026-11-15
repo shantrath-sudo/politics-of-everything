@@ -10,3 +10,4 @@ def test_sunday_delivery_launchd_job_is_scheduled_for_sunday_at_0900():
     assert interval["Weekday"] in (0, 7)
     assert interval["Hour"] == 9
     assert interval["Minute"] == 0
+    assert config["EnvironmentVariables"]["TZ"] == "Asia/Kolkata"
