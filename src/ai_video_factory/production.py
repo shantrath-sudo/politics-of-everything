@@ -52,20 +52,20 @@ from ai_video_factory.sanitization import sanitize_diagnostic
 
 # ========== Long-form constraints ==========
 
-MIN_RUNTIME_SECONDS = 900.0  # 15 minutes
-MAX_RUNTIME_SECONDS = 1200.0  # 20 minutes
-TARGET_RUNTIME_SECONDS = 1050.0  # pacing target (mid-range)
-DEFAULT_MIN_WORDS = 2200
+MIN_RUNTIME_SECONDS = 600.0  # 10 minutes
+MAX_RUNTIME_SECONDS = 900.0  # 15 minutes
+TARGET_RUNTIME_SECONDS = 750.0  # pacing target (12.5 minutes)
+DEFAULT_MIN_WORDS = 1500
 _MAX_WORDS_PER_SCENE = 1500  # a single long-form deep-dive segment can be very long
 _BOOKEND_SECONDS = 8.0  # intro + outro bookends
 
 # Headless Remotion renders one frame at a time through software GL (swiftshader) with
-# no GPU acceleration, so a full 15-20 minute master can take ~60 min on this machine.
+# no GPU acceleration, so a full 10-15 minute master can take ~60 min on this machine.
 # The cap is generous by design; a genuinely hung render is caught downstream by the
 # pilot monitor and by the empty-output guard in render_master().
 RENDER_SUBPROCESS_SECONDS = 7200  # 2 hours
 # A long-form documentary requires multiple distinct, source-backed chapters. One or
-# two claims cannot honestly become a 15–20 minute film; production rejects fewer than
+# two claims cannot honestly become a 10–15 minute film; production rejects fewer than
 # this many distinct grounded claims rather than padding narration with invented filler.
 MIN_GROUNDED_CLAIMS = 3
 
