@@ -15,8 +15,8 @@ if [[ -z "$UV_BIN" ]]; then
   exit 127
 fi
 
-"$UV_BIN" sync --project "$PROJECT_ROOT" --dev
-"$UV_BIN" run --project "$PROJECT_ROOT" politics-channel --help >/dev/null
+zsh "$PROJECT_ROOT/scripts/install_tts.sh"
+"$UV_BIN" run --project "$PROJECT_ROOT" --extra tts politics-channel --help >/dev/null
 
 for LABEL in scout advance; do
   TEMPLATE="$PROJECT_ROOT/launchd/com.politics-of-everything.$LABEL.plist.template"
