@@ -72,12 +72,12 @@ def make_extension_chat():
 
 
 def test_enforce_duration_closes_gap_within_tolerance():
-    script = make_stub_script(20.0, fill=0.6)
+    script = make_stub_script(12.5, fill=0.6)
     before = script.total_words
-    target = int(20.0 * WORDS_PER_MINUTE)
+    target = int(12.5 * WORDS_PER_MINUTE)
     assert before < target * 0.95  # genuinely short
 
-    report = enforce_duration(script, 20.0, make_extension_chat())
+    report = enforce_duration(script, 12.5, make_extension_chat())
 
     assert report.within_tolerance
     assert report.final_words >= target * 0.95
@@ -95,27 +95,27 @@ def test_enforce_duration_closes_gap_within_tolerance():
 
 
 def test_enforce_duration_noop_when_on_target():
-    script = make_stub_script(20.0, fill=1.0)
+    script = make_stub_script(12.5, fill=1.0)
     calls = []
 
     def chat(messages, max_tokens):
         calls.append(messages)
         raise AssertionError("chat must not be called")
 
-    report = enforce_duration(script, 20.0, chat)
+    report = enforce_duration(script, 12.5, chat)
     assert report.within_tolerance
     assert report.iterations == []
     assert calls == []
 
 
 def test_enforce_duration_fails_loud_when_extension_impossible():
-    script = make_stub_script(20.0, fill=0.6)
+    script = make_stub_script(12.5, fill=0.6)
 
     def dead_chat(messages, max_tokens):
         return ""  # model returns nothing, twice, then gives up
 
     with pytest.raises(LongformError, match="duration enforcement failed"):
-        enforce_duration(script, 20.0, dead_chat)
+        enforce_duration(script, 12.5, dead_chat)
 
 
 def test_enforce_duration_appends_encore_when_all_beats_at_cap():
@@ -124,7 +124,7 @@ def test_enforce_duration_appends_encore_when_all_beats_at_cap():
     spec = BeatSpec(
         key="half", label="HALF", fraction=0.5, purpose="p", retention="r"
     )
-    target_minutes = 20.0
+    target_minutes = 12.5
     word_target = beat_word_target(spec, target_minutes)
     words = int(word_target * _BEAT_CAP_MULTIPLE)
     beat = LongformBeat(
@@ -150,11 +150,11 @@ def test_enforce_duration_appends_encore_when_all_beats_at_cap():
 
 
 def test_enforce_duration_report_serializes():
-    script = make_stub_script(20.0, fill=0.8)
-    report = enforce_duration(script, 20.0, make_extension_chat())
+    script = make_stub_script(12.5, fill=0.8)
+    report = enforce_duration(script, 12.5, make_extension_chat())
     payload = report.to_dict()
-    assert payload["target_minutes"] == 20.0
-    assert payload["target_words"] == int(20.0 * WORDS_PER_MINUTE)
+    assert payload["target_minutes"] == 12.5
+    assert payload["target_words"] == int(12.5 * WORDS_PER_MINUTE)
     assert payload["within_tolerance"] is True
     assert payload["final_words"] == script.total_words
     assert isinstance(payload["iterations"], list)
