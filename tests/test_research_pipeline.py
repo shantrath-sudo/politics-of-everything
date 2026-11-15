@@ -369,10 +369,18 @@ def test_verify_claims_requires_two_reliable_independent_domains():
         ["https://example.com/a", "https://reddit.com/b"],
         "confirmed fact",
     )
-    independent = Claim(
+    mixed_quality = Claim(
         "claim-03",
+        "The parliament passed the bill.",
+        ["https://www.reuters.com/a", "https://reddit.com/b"],
+        "confirmed fact",
+    )
+    independent = Claim(
+        "claim-04",
         "The parliament passed the bill.",
         ["https://www.reuters.com/a", "https://prsindia.org/b"],
         "confirmed fact",
     )
-    assert verify_claims([same_publisher, unverified, independent], []) == [independent]
+    assert verify_claims(
+        [same_publisher, unverified, mixed_quality, independent], []
+    ) == [independent]
