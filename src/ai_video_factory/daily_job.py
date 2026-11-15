@@ -97,7 +97,7 @@ class JobConfig:
     providers: list[str] = field(default_factory=lambda: ["hacker_news", "reddit"])
     max_candidates: int = 5
     research_shortlist: int = 2
-    min_words: int = 2200
+    min_words: int = 1500
     trend_transport: TrendTransport | None = None
     asset_transport: Callable[[str], bytes] | None = None
     now_iso: str | None = None
