@@ -14,10 +14,10 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 8 | 10–15 minute script engine | COMPLETE | Runtime limits, political documentary prompt, longer research context and CI tests |
 | 9 | Topic/script/final approval gates | COMPLETE | Persistent fail-closed state transitions; explicit topic, script and final approval commands |
 | 10 | Local narration and Mac resource profile | IN PROGRESS | 4B-class local inference profile configured; model and TTS need installation/readiness test |
-| 11 | Visual sourcing and rights manifest | PENDING | Audit and adapt asset licences, attribution and visual fallbacks |
+| 11 | Visual sourcing and rights manifest | IN PROGRESS | Wikimedia Commons CC0/PD/CC-BY/CC-BY-SA acquisition and combined attribution manifest wired; needs live asset test |
 | 12 | Remotion/FFmpeg production profile | IN PROGRESS | Approved long-form script input wired into renderer; no real Mac render yet |
 | 13 | Technical/editorial quality gates | IN PROGRESS | Existing QC pipeline retained; real documentary render and review required |
-| 14 | Sunday delivery package | IN PROGRESS | Final MP4 and production manifest are routed to final_pending; captions/thumbnail/metadata package still needs audit |
+| 14 | Sunday delivery package | IN PROGRESS | Private Sunday package assembly, MP4 hard-link/copy, research, script, captions and attribution tested; real render artifacts still need audit |
 | 15 | Daily/weekly macOS scheduling | IN PROGRESS | daily scouting, four-hour advancement and Sunday delivery launchd templates plus install/uninstall scripts committed; not installed or activated |
 | 16 | Pilot: Who Really Controls a Democracy? | PENDING | Requires researched dossier, approved script, render, QA and editor sign-off |
 | 17 | Operational activation | PENDING | Requires local setup, full rehearsal and explicit user go-ahead; publishing remains disabled |
