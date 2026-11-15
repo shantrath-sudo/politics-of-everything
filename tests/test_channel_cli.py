@@ -30,6 +30,9 @@ def test_status_shows_approval_paths_and_sensitive_review_flags(tmp_path, monkey
     script.parent.mkdir(parents=True, exist_ok=True)
     script.write_text("{}")
     store.transition(project_id, "script_pending", artifact=str(script))
+    script_markdown = project_dir / "script.md"
+    script_markdown.write_text("# Readable script")
+    store.attach_artifact(project_id, "script_markdown", script_markdown)
     (research_dir / "editorial_metadata.json").write_text(json.dumps({
         "flagged_for_human_review": True,
         "review_reasons": ["topic touches sensitive area: election"],
@@ -44,6 +47,7 @@ def test_status_shows_approval_paths_and_sensitive_review_flags(tmp_path, monkey
     assert result.exit_code == 0, result.output
     assert "script_pending" in result.output
     assert "Script awaiting approval" in result.output
+    assert "Readable script" in result.output
     assert "HUMAN REVIEW REQUIRED" in result.output
     assert "topic touches sensitive area: election" in result.output
     assert "2026-11-15.md" in result.output
