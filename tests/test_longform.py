@@ -48,8 +48,8 @@ def make_fake_chat():
 
 
 def test_beat_word_targets_cover_full_runtime():
-    total = sum(beat_word_target(spec, 25.0) for spec in LONGFORM_BEATS)
-    assert total == pytest.approx(25.0 * WORDS_PER_MINUTE, rel=0.02)
+    total = sum(beat_word_target(spec, 12.5) for spec in LONGFORM_BEATS)
+    assert total == pytest.approx(12.5 * WORDS_PER_MINUTE, rel=0.02)
 
 
 def test_beat_fractions_sum_to_one():
@@ -61,20 +61,20 @@ def test_generate_longform_script_success():
         "Water on Mars",
         "Where Martian water is and why it matters",
         "https://www.nasa.gov", verify_source_urls=False,
-        target_minutes=20.0,
+        target_minutes=12.5,
         chat_fn=make_fake_chat(),
     )
     assert len(script.beats) == 7
-    assert script.total_words == pytest.approx(20.0 * WORDS_PER_MINUTE, rel=0.15)
-    assert script.estimated_minutes == pytest.approx(20.0, rel=0.15)
+    assert script.total_words == pytest.approx(12.5 * WORDS_PER_MINUTE, rel=0.15)
+    assert script.estimated_minutes == pytest.approx(12.5, rel=0.15)
     assert all(beat.scenes for beat in script.beats)
 
 
 def test_generate_longform_script_rejects_out_of_range():
-    with pytest.raises(LongformError, match="between 20 and 30"):
-        generate_longform_script("T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=10.0)
-    with pytest.raises(LongformError, match="between 20 and 30"):
-        generate_longform_script("T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=45.0)
+    with pytest.raises(LongformError, match="between 10 and 15"):
+        generate_longform_script("T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=9.0)
+    with pytest.raises(LongformError, match="between 10 and 15"):
+        generate_longform_script("T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=16.0)
 
 
 def test_generate_longform_thin_beat_fails():
@@ -85,7 +85,7 @@ def test_generate_longform_thin_beat_fails():
 
     with pytest.raises(LongformError, match="too thin"):
         generate_longform_script(
-            "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=20.0, chat_fn=thin_chat
+            "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=12.5, chat_fn=thin_chat
         )
 
 
@@ -95,7 +95,7 @@ def test_generate_longform_malformed_json_fails():
 
     with pytest.raises(LongformError, match="no JSON object"):
         generate_longform_script(
-            "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=20.0, chat_fn=bad_chat
+            "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=12.5, chat_fn=bad_chat
         )
 
 
@@ -105,7 +105,7 @@ def test_generate_longform_chat_error_fails():
 
     with pytest.raises(LongformError, match="generation failed"):
         generate_longform_script(
-            "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=20.0, chat_fn=boom_chat
+            "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=12.5, chat_fn=boom_chat
         )
 
 
@@ -113,7 +113,7 @@ def test_generate_longform_writes_output(tmp_path):
     output = tmp_path / "script.json"
     script = generate_longform_script(
         "T", "D", "https://www.nasa.gov", verify_source_urls=False,
-        target_minutes=20.0, chat_fn=make_fake_chat(), output_path=output,
+        target_minutes=12.5, chat_fn=make_fake_chat(), output_path=output,
     )
     assert output.is_file()
     payload = json.loads(output.read_text(encoding="utf-8"))
@@ -124,7 +124,7 @@ def test_generate_longform_writes_output(tmp_path):
 def _script_20min():
     return generate_longform_script(
         "Water on Mars", "Where it is", "https://www.nasa.gov", verify_source_urls=False,
-        target_minutes=20.0, chat_fn=make_fake_chat(),
+        target_minutes=12.5, chat_fn=make_fake_chat(),
     )
 
 
@@ -133,7 +133,7 @@ def test_longform_to_edit_document_timing():
     doc = longform_to_edit_document(script, fps=30)
     assert isinstance(doc, EditDocument)
     minutes = doc.duration_frames / doc.fps / 60
-    assert minutes == pytest.approx(20.0, rel=0.15)
+    assert minutes == pytest.approx(12.5, rel=0.15)
     ids = [scene.id for scene in doc.scenes]
     assert len(ids) == len(set(ids))
 
@@ -176,7 +176,7 @@ def test_generate_longform_retries_empty_thinking_output():
         return good(messages, max_tokens)
 
     script = generate_longform_script(
-        "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=20.0, chat_fn=flaky_chat
+        "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=12.5, chat_fn=flaky_chat
     )
     assert len(script.beats) == 7
     assert len(calls) == 8  # seven beats, first beat retried once
@@ -195,7 +195,7 @@ def test_generate_longform_retries_truncated_json():
         return good(messages, max_tokens)
 
     script = generate_longform_script(
-        "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=20.0, chat_fn=trunc_chat
+        "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=12.5, chat_fn=trunc_chat
     )
     assert len(script.beats) == 7
     assert len(calls) == 8
@@ -207,7 +207,7 @@ def test_generate_longform_retry_exhaustion_fails_loud():
 
     with pytest.raises(LongformError, match="after 2 attempts"):
         generate_longform_script(
-            "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=20.0, chat_fn=empty_chat
+            "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=12.5, chat_fn=empty_chat
         )
 
 
@@ -233,7 +233,7 @@ def test_generate_longform_feeds_back_validation_error():
         return good(messages, max_tokens)
 
     script = generate_longform_script(
-        "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=20.0, chat_fn=thin_then_good
+        "T", "D", "https://www.nasa.gov", verify_source_urls=False, target_minutes=12.5, chat_fn=thin_then_good
     )
     assert len(script.beats) == 7
     assert len(seen) == 8  # seven beats, first beat retried once
@@ -295,7 +295,7 @@ def _saved_script_dict(extra_beats):
         "title": "Fermi Paradox",
         "description": "Where is everybody?",
         "topic": "The Fermi Paradox",
-        "target_minutes": 25.0,
+        "target_minutes": 12.5,
         "total_words": 240,
         "estimated_minutes": 1.6,
         "sources": ["https://www.nasa.gov"],
@@ -326,7 +326,7 @@ def test_from_dict_tolerates_unknown_encore_beat_key():
     assert script.title == "Fermi Paradox"
     assert script.description == "Where is everybody?"
     assert script.topic == "The Fermi Paradox"
-    assert script.target_minutes == 25.0
+    assert script.target_minutes == 12.5
     assert script.sources == ["https://www.nasa.gov"]
     assert script.generated_at == "2026-09-20T10:00:00"
     assert script.source_verification is None
