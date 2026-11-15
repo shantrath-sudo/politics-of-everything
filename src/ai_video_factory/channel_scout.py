@@ -135,8 +135,8 @@ def scout_topics(
         candidate = score_topic(item, now=now)
         if candidate is None:
             continue
-        normalized = re.sub(r"[^a-z0-9 ]", "", candidate.title.lower()).strip()
-        normalized = re.sub(r"\\s+", " ", normalized)
+        normalized = re.sub(r"\s+", " ", normalized)
+        normalized = re.sub(r"\s+", " ", normalized)
         if not normalized or normalized in seen:
             continue
         seen.add(normalized)
@@ -158,5 +158,5 @@ def write_scout_report(topics: list[ScoredTopic], output_path: Path) -> Path:
         "editorial_status": "unapproved_leads",
         "topics": [topic.to_dict() for topic in topics],
     }
-    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return output_path
