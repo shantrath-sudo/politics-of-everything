@@ -14,6 +14,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 from urllib.error import URLError
+from urllib.parse import urlsplit
 from urllib.request import urlopen
 
 
@@ -63,7 +64,17 @@ class MacInferenceSession:
         ready_timeout_seconds: float = 600.0,
         poll_interval_seconds: float = 2.0,
     ) -> None:
-        if not base_url.startswith("http://127.0.0.1:1234/v1"):
+        parsed_endpoint = urlsplit(base_url)
+        if (
+            parsed_endpoint.scheme != "http"
+            or parsed_endpoint.hostname != "127.0.0.1"
+            or parsed_endpoint.port != 1234
+            or parsed_endpoint.path.rstrip("/") != "/v1"
+            or parsed_endpoint.username
+            or parsed_endpoint.password
+            or parsed_endpoint.query
+            or parsed_endpoint.fragment
+        ):
             raise MacInferenceError("LM Studio must use the configured loopback endpoint")
         self.model_key = model_key
         self.identifier = identifier
