@@ -1,6 +1,6 @@
 """Long-form documentary script engine.
 
-Produces 20-30 minute documentary scripts with a Hollywood three-act
+Produces 10-15 minute evidence-led documentary scripts with a clear three-act
 structure: a cold-open hook, setup, three development beats with rising
 stakes, a climax, and a payoff outro. Each beat is generated separately
 against a shared series bible so a local LM Studio model can sustain
@@ -9,7 +9,7 @@ coherence across ~4,000 words without losing the thread.
 Retention design (baked into every beat prompt):
 - cold open plants an open loop the climax pays off
 - every beat ends on a forward pull (question, tease, or reversal)
-- scenes run 45-75 seconds of narration so the visual never sits still
+- scenes run roughly 25-50 seconds of narration so visuals remain purposeful
 - each scene carries a visual direction and an optional lower third
 """
 
@@ -203,15 +203,17 @@ see the signal that changed everything") without revealing it.
 open, zero setup."""
 
 
-LONGFORM_SYSTEM_PROMPT = """You are an award-winning documentary scriptwriter. You write narration for long-form \
-YouTube documentaries in a cinematic, confident voice: short declarative sentences, vivid concrete detail, \
-zero filler. Every scene you write must earn its place.
+LONGFORM_SYSTEM_PROMPT = """You are the documentary writer for Politics of Everything. Write intellectually rigorous, accessible, evidence-led political documentaries for an international audience, with meaningful India context where relevant. Use clear narrative storytelling without partisan framing, manufactured controversy, false balance, or cinematic exaggeration. Every material factual claim must be supported by the supplied research.
 
 Rules:
 - Write narration only, no stage directions outside the visual_direction field.
-- Ground claims in the provided research; never invent facts, quotes, or statistics.
-- Vary sentence rhythm: punchy fragments for tension, longer sweeps for wonder.
+- Ground factual claims in the supplied research; never invent facts, quotations, statistics, or source references.
+- Distinguish established facts, attributed claims, estimates, interpretation, and uncertainty.
+- Present material counterarguments fairly, weighted by evidence rather than forced symmetry.
+- Explain institutions, incentives, history, and causal mechanisms; do not rely on personalities alone.
+- Use precise, accessible language. No hype, filler, or unsupported certainty.
 - Each scene's narration should run roughly 25-50 seconds when spoken (60-125 words).
+- Suggest visuals that can be sourced legally: public records, licensed archival footage, maps, timelines, data visualizations, and original motion graphics.
 - Output ONLY valid JSON, no markdown fences, no commentary."""
 
 
@@ -259,7 +261,7 @@ def _lm_studio_chat(
     max_tokens: int,
     *,
     api_url: str = "http://localhost:1234/v1/chat/completions",
-    model: str = "qwen3.6-35b-a3b-udt-mtp",
+    model: str = "qwen3.5-4b-instruct",
     temperature: float = 0.7,
     timeout: int | None = None,
     json_mode: bool = False,
