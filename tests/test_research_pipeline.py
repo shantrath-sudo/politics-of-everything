@@ -360,7 +360,7 @@ def test_verify_claims_requires_two_reliable_independent_domains():
     same_publisher = Claim(
         "claim-01",
         "The parliament passed the bill.",
-        ["https://www.reuters.com/a", "https://reuters.com/b"],
+        ["https://www.bbc.co.uk/a", "https://bbc.com/b"],
         "confirmed fact",
     )
     unverified = Claim(
