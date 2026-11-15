@@ -29,24 +29,36 @@ The scout saves a dated shortlist under data/channel/scouting/. Discovery scores
 
     politics-channel approve-topic CANDIDATE_ID
 
-The project workflow then enforces this order:
+The project workflow enforces this order:
 
 1. Topic approval
-2. Research dossier recorded
-3. Script submitted and approved
-4. Production and QA manifest recorded
-5. Final MP4 submitted and approved
+2. Research from at least two independent publisher domains
+3. Claim extraction, corroboration and contradiction checks
+4. Documentary script generation and topic-adherence check
+5. Script approval
+6. Remotion/FFmpeg rendering and technical QA
+7. Final MP4 submitted for approval
+8. Final editorial approval
 
-The final approval command only records editorial approval. It does not upload or publish.
+Commands:
+
+    politics-channel research PROJECT_ID
+    politics-channel draft-script PROJECT_ID
+    politics-channel approve-script PROJECT_ID
+    politics-channel render PROJECT_ID
+    politics-channel approve-final PROJECT_ID
+    politics-channel advance
+
+The advance command runs only non-approval stages and stops at every human gate. The final approval command only records editorial approval. It does not upload or publish.
 
 ### Production engine
 
-The existing Remotion, FFmpeg, research, narration and quality-control components are retained as the production foundation. The long-form script engine and format presets are configured for 10–15 minute documentaries. Local inference defaults are sized more conservatively for a 16 GB Apple Silicon Mac; the selected model still needs to be installed and smoke-tested locally.
+The existing research pipeline, Remotion, FFmpeg, narration and quality-control components are retained. Google News RSS redirect links are resolved to publisher HTTPS article URLs before research. The research stage requires at least two distinct publisher domains and writes source, claim, contradiction and verified-fact records. The long-form script engine and format presets are configured for 10–15 minute documentaries. Local inference defaults are sized more conservatively for a 16 GB Apple Silicon Mac; the selected model still needs to be installed and smoke-tested locally.
 
 ## Safety
 
 - The legacy scheduler run YouTube uploader is disabled for this channel.
-- No YouTube credentials are required for topic scouting.
+- No YouTube credentials are required for topic scouting or local review.
 - No paid service or hosted inference provider is activated by default.
 - No large generative-video model weights should be downloaded.
 - No topic, script or final video is automatically approved.
