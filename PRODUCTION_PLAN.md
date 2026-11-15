@@ -6,6 +6,7 @@ One English documentary every Sunday, 10–15 minutes, professional documentary 
 ## Automated local schedule (Asia/Kolkata)
 - Daily at 08:00: collect and score topic leads from public RSS sources; save a dated shortlist.
 - Every 4 hours: inspect project state and run only the next eligible non-approval stage.
+- Every Sunday at 09:00: assemble the final_pending MP4, research dossier, script, captions, attribution and production manifest into a private local review package. This is delivery for human review, not publishing.
 - When research or script generation is due: start the configured local inference model if it is not already resident; unload it after the run only if this controller started it.
 - If a stage fails, preserve the previous state, log the blocker and retry on a later run.
 - Never cross topic, script or final-video approval gates automatically.
