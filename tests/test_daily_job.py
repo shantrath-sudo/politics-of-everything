@@ -61,8 +61,6 @@ def _trend_transport(url: str) -> str:
             "hits": [
                 {"object_id": "a1", "title": "Local AI Trends",
                  "points": 900, "num_comments": 50, "created_at": "2026-09-07T10:00:00Z"},
-                {"object_id": "a2", "title": "Local AI Trends",
-                 "points": 800, "num_comments": 40, "created_at": "2026-09-07T09:00:00Z"},
             ]
         })
     if "news.google.com" in url:
@@ -70,9 +68,15 @@ def _trend_transport(url: str) -> str:
             '<?xml version="1.0"?><rss version="2.0"><channel>'
             "<item>"
             "<title>Local AI Trends</title>"
-            "<link>https://example.com/gn1</link>"
+            "<link>https://www.reuters.com/world/example</link>"
             "<pubDate>Sat, 07 Sep 2026 10:00:00 GMT</pubDate>"
-            "<source>Google News</source>"
+            "<source>Reuters</source>"
+            "</item>"
+            "<item>"
+            "<title>Local AI Trends</title>"
+            "<link>https://www.bbc.com/news/example</link>"
+            "<pubDate>Sat, 07 Sep 2026 10:00:00 GMT</pubDate>"
+            "<source>BBC News</source>"
             "</item></channel></rss>"
         )
     raise AssertionError(f"unexpected trend transport url: {url}")
@@ -422,7 +426,11 @@ def test_source_fetch_and_extractor_are_deterministic() -> None:
         "Study number 2 recorded a distinct finding of 12 units that year.",
         f"Report specific to {url} with additional grounded material for testing.",
     ])
-    urls = ["https://example.com/a", "https://example.com/b", "https://example.com/c"]
+    urls = [
+        "https://www.reuters.com/world/a",
+        "https://www.bbc.com/news/b",
+        "https://apnews.com/article/c",
+    ]
 
     r1 = run_research("Local AI Trends", urls, production_extractor=injected, content_fetcher=fetcher)
     r2 = run_research("Local AI Trends", urls, production_extractor=injected, content_fetcher=fetcher)
