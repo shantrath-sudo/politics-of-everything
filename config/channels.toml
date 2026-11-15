@@ -4,7 +4,7 @@
 name = "Politics of Everything"
 slug = "politics-of-everything"
 topic_focus = "Power, institutions, economics, society, culture, political ideas, technology, and geopolitics. International perspective with meaningful India relevance."
-theme = "generic"
+theme = "politics-of-everything"
 target_duration_minutes = 12.5
 schedule_time = "09:00"
 timezone = "Asia/Kolkata"
