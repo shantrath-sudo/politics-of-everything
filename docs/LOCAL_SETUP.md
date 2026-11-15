@@ -11,7 +11,7 @@ Clone the working branch (not the untouched upstream-style main branch):
 
 ## 1. Required tools
 
-- macOS on Apple Silicon
+- macOS on Apple Silicon, with the system time zone set to Asia/Kolkata (UTC+05:30); the installer checks this because launchd calendar schedules use the Mac's system time zone
 - Python 3.12
 - uv
 - FFmpeg and ffprobe
