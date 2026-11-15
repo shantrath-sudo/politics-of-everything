@@ -389,6 +389,14 @@ def submit_final(
 def approve_final(project_id: str = typer.Argument(...)) -> None:
     """Record final editorial approval. This command never publishes the video."""
     try:
+        current = _store().get(project_id)
+        package_path = Path((current.get("artifacts") or {}).get("delivery_package", ""))
+        delivery_manifest = Path((current.get("artifacts") or {}).get("delivery_manifest", ""))
+        final_video = Path((current.get("artifacts") or {}).get("final_video", ""))
+        if not package_path.is_dir() or not delivery_manifest.is_file() or not final_video.is_file():
+            raise ChannelWorkflowError(
+                "final approval is available only after the private Sunday review package has been delivered"
+            )
         record = _store().transition(project_id, "final_approved")
         topic_ledger = TopicLedger(DATA / "topics.jsonl")
         topic_ledger.add("politics-of-everything", record["topic"]["title"], run_id=project_id)
@@ -507,6 +515,9 @@ def deliver(
         destination = DATA / "deliveries" / today.isoformat() / project_id
         if destination.exists():
             if (destination / "delivery_manifest.json").is_file():
+                _store().record_delivery(
+                    project_id, destination, destination / "delivery_manifest.json"
+                )
                 typer.echo(f"{project_id}: already delivered to {destination}")
                 continue
             shutil.rmtree(destination)
@@ -621,6 +632,10 @@ def status() -> None:
         elif stage == "final_pending":
             typer.echo(f"  Final video awaiting approval: {artifacts.get('final_video', 'not recorded')}")
             typer.echo(f"  Production manifest: {artifacts.get('production_manifest', 'not recorded')}")
+            if artifacts.get("delivery_package"):
+                typer.echo(f"  Private review package: {artifacts['delivery_package']}")
+            else:
+                typer.echo("  Private Sunday review package: not delivered yet")
         metadata_path = _project_dir(project_id) / "research" / "editorial_metadata.json"
         if metadata_path.is_file():
             try:
