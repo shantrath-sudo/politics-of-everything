@@ -168,10 +168,10 @@ def video_pipeline(
     duration: int = typer.Option(90, "--duration", help="Target video duration in seconds"),
     assets_dir: str = typer.Option(None, "--assets-dir", help="Per-scene stock asset directories (scene-00/, ...)"),
     trend_source: str = typer.Option("all", "--trend-source", help="Trend providers to query: reddit, gnews, or all"),
-    theme: str = typer.Option("space", "--theme", help="Theming preset: space (default) or generic"),
+    theme: str = typer.Option("generic", "--theme", help="Theming preset: generic (default) or space"),
     theme_json: str = typer.Option(None, "--theme-json", help="Path to a custom theme JSON file (overrides --theme)"),
     longform: bool = typer.Option(False, "--longform", help="Generate a 20-30 minute documentary script (three-act structure) instead of a 90-second short"),
-    duration_minutes: float = typer.Option(25.0, "--duration-minutes", help="Target runtime in minutes for --longform (20-30)"),
+    duration_minutes: float = typer.Option(12.5, "--duration-minutes", help="Target runtime in minutes for --longform (10-15)"),
     json_output: bool = typer.Option(False, "--json", help="Output result as JSON"),
     llm_url: str = typer.Option("http://localhost:1234/v1/chat/completions", "--llm-url", help="OpenAI-compatible chat completions URL for script generation (LM Studio default, or llama-server e.g. http://localhost:8080/v1/chat/completions)"),
     draft: bool = typer.Option(False, "--draft", help="Render at 640x360 for fast review iterations instead of full 1280x720"),
@@ -724,7 +724,7 @@ def review_reject(
 @app.command("nightly-batch")
 def nightly_batch(
     topics: int = typer.Option(3, "--topics", help="Draft topics per night"),
-    theme: str = typer.Option("space", "--theme", help="Theming preset"),
+    theme: str = typer.Option("generic", "--theme", help="Theming preset"),
     trend_source: str = typer.Option("all", "--trend-source", help="reddit, gnews, or all"),
     target_minutes: float = typer.Option(25.0, "--target-minutes", help="Target runtime per video"),
     format_key: str = typer.Option("business_autopsy", "--format", help="YouTube format preset"),
