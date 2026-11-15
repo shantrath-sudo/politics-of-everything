@@ -18,7 +18,7 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 12 | Remotion/FFmpeg production profile | IN PROGRESS | Approved long-form script input wired into renderer; no real Mac render yet |
 | 13 | Technical/editorial quality gates | IN PROGRESS | Existing QC pipeline retained; real documentary render and review required |
 | 14 | Sunday delivery package | IN PROGRESS | Final MP4 and production manifest are routed to final_pending; captions/thumbnail/metadata package still needs audit |
-| 15 | Daily/weekly macOS scheduling | IN PROGRESS | launchd templates and install/uninstall scripts committed; not installed or activated |
+| 15 | Daily/weekly macOS scheduling | IN PROGRESS | daily scouting, four-hour advancement and Sunday delivery launchd templates plus install/uninstall scripts committed; not installed or activated |
 | 16 | Pilot: Who Really Controls a Democracy? | PENDING | Requires researched dossier, approved script, render, QA and editor sign-off |
 | 17 | Operational activation | PENDING | Requires local setup, full rehearsal and explicit user go-ahead; publishing remains disabled |
 
