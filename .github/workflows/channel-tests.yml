@@ -27,6 +27,10 @@ jobs:
         uses: astral-sh/setup-uv@v5
       - name: Install project and test dependencies
         run: uv sync --dev
+      - name: Compile Python source
+        run: uv run python -m compileall -q src
+      - name: Check channel CLI
+        run: uv run politics-channel --help
       - name: Run channel-critical tests
         run: >-
           uv run pytest -q
