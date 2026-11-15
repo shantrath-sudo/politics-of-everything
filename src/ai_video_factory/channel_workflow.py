@@ -485,7 +485,7 @@ class WorkflowStore:
         record["pending_revision_feedback"] = note
         previous_artifacts = {
             key: record["artifacts"][key]
-            for key in ("script", "production_manifest", "final_video", "delivery_package", "delivery_manifest")
+            for key in ("script", "script_markdown", "production_manifest", "final_video", "delivery_package", "delivery_manifest")
             if record["artifacts"].get(key)
         }
         archived_package = None
@@ -527,6 +527,27 @@ class WorkflowStore:
             "from_stage": current,
             "revision": record["revision_count"],
             "archived_delivery_package": str(archived_package) if archived_package else None,
+        })
+        self._path(project_id).write_text(
+            json.dumps(record, indent=2) + "\n", encoding="utf-8"
+        )
+        return record
+
+    def attach_artifact(
+        self, project_id: str, key: str, artifact_path: str | Path
+    ) -> dict[str, Any]:
+        """Attach a companion artifact such as the readable Markdown script."""
+        path = Path(artifact_path)
+        if not key.strip() or not path.is_file():
+            raise ChannelWorkflowError("artifact key and existing file are required")
+        record = self.get(project_id)
+        record["artifacts"][key] = str(path)
+        record["updated_at"] = datetime.now(UTC).isoformat()
+        record["history"].append({
+            "stage": record["stage"],
+            "event": "artifact_attached",
+            "artifact": key,
+            "path": str(path),
         })
         self._path(project_id).write_text(
             json.dumps(record, indent=2) + "\n", encoding="utf-8"
