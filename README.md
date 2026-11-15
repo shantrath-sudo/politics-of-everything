@@ -48,16 +48,17 @@ Commands:
     politics-channel render PROJECT_ID
     politics-channel approve-final PROJECT_ID
     politics-channel advance
+    politics-channel deliver --force  # manual test only; normally Sunday at 09:00
 
 The advance command runs only non-approval stages and stops at every human gate. When research or writing is due, it starts the configured local model if needed and unloads it only if the automation started it. The Sunday delivery command assembles a private review package under data/deliveries/. It contains the final MP4 and available research, script, attribution, captions and QA artifacts. The final approval command only records editorial approval. It does not upload or publish.
 
 ### macOS scheduling
 
-After local dependencies and the configured model are ready, install the two launchd jobs:
+After local dependencies and the configured model are ready, install the three launchd jobs:
 
     zsh scripts/install_launchd.sh
 
-This installs daily scouting at 08:00 and checks workflow progress every four hours. To remove the schedules without deleting project data:
+This installs daily scouting at 08:00, workflow advancement every four hours, and private delivery every Sunday at 09:00. To remove the schedules without deleting project data:
 
     zsh scripts/uninstall_launchd.sh
 
