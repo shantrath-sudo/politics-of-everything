@@ -183,7 +183,10 @@ def _render_project(project_id: str) -> dict:
         data_root=DATA,
         job=job,
         script_path=script_path,
-        theme=resolve_theme("generic"),
+        theme=resolve_theme(
+            "politics-of-everything",
+            ROOT / "config" / "themes" / "politics-of-everything.json",
+        ),
         longform=True,
         target_duration_minutes=12.5,
         draft=False,
