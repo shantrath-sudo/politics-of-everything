@@ -112,8 +112,27 @@ def test_final_approval_is_blocked_until_private_package_exists(tmp_path, monkey
 
     package = tmp_path / "deliveries" / project_id
     package.mkdir(parents=True)
+    package_video = package / "final.mp4"
+    package_video.write_bytes(b"review-copy")
+    package_manifest = package / "production_manifest.json"
+    package_manifest.write_text("{}")
+    package_script = package / "script.json"
+    package_script.write_text("{}")
+    package_research = package / "research"
+    package_research.mkdir()
+    (package_research / "research_brief.md").write_text("Research dossier.")
     delivery_manifest = package / "delivery_manifest.json"
-    delivery_manifest.write_text('{"published": false}')
+    delivery_manifest.write_text(json.dumps({
+        "project_id": project_id,
+        "published": False,
+        "final_approval_required": True,
+        "files": {
+            "final_video": str(package_video),
+            "production_manifest": str(package_manifest),
+            "script": str(package_script),
+            "research_dossier": str(package_research),
+        },
+    }))
     store.record_delivery(project_id, package, delivery_manifest)
 
     approved = runner.invoke(channel_cli.app, ["approve-final", project_id])
