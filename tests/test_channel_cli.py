@@ -48,3 +48,10 @@ def test_status_shows_approval_paths_and_sensitive_review_flags(tmp_path, monkey
     assert "topic touches sensitive area: election" in result.output
     assert "2026-11-15.md" in result.output
     assert "Publishing: disabled" in result.output
+
+
+
+def test_publisher_domain_collapses_common_subdomains():
+    assert channel_cli._publisher_domain("https://www.reuters.com/world/story") == "reuters.com"
+    assert channel_cli._publisher_domain("https://m.bbc.co.uk/news/story") == "bbc.co.uk"
+    assert channel_cli._publisher_domain("https://example.org/story") == "example.org"
