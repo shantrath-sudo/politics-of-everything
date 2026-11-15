@@ -550,7 +550,7 @@ def _build_bible(
         lines.append(f"Working title: {title}")
     if research_brief:
         brief = research_brief.strip()
-        lines.append(f"Research brief (ground every claim in this):\n{brief[:4000]}")
+        lines.append(f"Research brief (ground every claim in this):\n{brief[:12000]}")
     lines.append(_format_voice_line(preset))
     return "\n".join(lines)
 
@@ -679,6 +679,11 @@ def generate_longform_script(
             f"assembled script is {script.total_words} words vs {target_words:.0f} "
             f"target (estimated {script.estimated_minutes:.1f} min vs "
             f"{target_minutes:.0f} min target)"
+        )
+    if not (MIN_LONGFORM_MINUTES <= script.estimated_minutes <= MAX_LONGFORM_MINUTES):
+        raise LongformError(
+            f"assembled script runtime {script.estimated_minutes:.1f} minutes "
+            f"is outside the channel limit of {MIN_LONGFORM_MINUTES}-{MAX_LONGFORM_MINUTES} minutes"
         )
 
     if output_path is not None:
