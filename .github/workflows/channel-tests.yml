@@ -28,7 +28,7 @@ jobs:
       - name: Check zsh launcher syntax
         run: |
           sudo apt-get update
-          sudo apt-get install -y zsh
+          sudo apt-get install -y zsh ffmpeg
           for script in scripts/*.sh; do zsh -n "$script"; done
       - name: Install project and test dependencies
         run: uv sync --dev --extra tts
@@ -54,3 +54,16 @@ jobs:
           tests/test_inference_service.py
           tests/test_research_pipeline.py
           tests/test_research_provenance.py
+          tests/test_cli.py
+          tests/test_daily_job.py
+          tests/test_nightly_batch.py
+          tests/test_production.py
+          tests/test_pipeline.py
+          tests/test_qc_editorial.py
+          tests/test_qc_final.py
+          tests/test_packaging.py
+          tests/test_source_verifier.py
+          tests/test_trend.py
+          tests/test_assets.py
+          tests/test_stock_visual_path.py
+          tests/test_music_bed.py
