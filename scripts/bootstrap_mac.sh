@@ -4,7 +4,14 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-if ! command -v brew >/dev/null 2>&1; then
+BREW_BIN="$(command -v brew || true)"
+if [[ -z "$BREW_BIN" && -x /opt/homebrew/bin/brew ]]; then
+  BREW_BIN="/opt/homebrew/bin/brew"
+fi
+if [[ -z "$BREW_BIN" && -x /usr/local/bin/brew ]]; then
+  BREW_BIN="/usr/local/bin/brew"
+fi
+if [[ -z "$BREW_BIN" ]]; then
   echo "Homebrew is required for the one-command Mac bootstrap." >&2
   echo "Install Homebrew from https://brew.sh/ and rerun this script." >&2
   exit 127
@@ -13,9 +20,9 @@ fi
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 for PACKAGE in uv ffmpeg node; do
-  if ! brew list --formula "$PACKAGE" >/dev/null 2>&1; then
+  if ! "$BREW_BIN" list --formula "$PACKAGE" >/dev/null 2>&1; then
     echo "Installing $PACKAGE..."
-    brew install "$PACKAGE"
+    "$BREW_BIN" install "$PACKAGE"
   else
     echo "$PACKAGE is already installed."
   fi
