@@ -93,7 +93,7 @@ def _validate_review_package(record: dict) -> None:
     if manifest.get("published") is not False or manifest.get("final_approval_required") is not True:
         raise ChannelWorkflowError("delivery manifest has an invalid publication or approval state")
     files = manifest.get("files") or {}
-    required = {"final_video", "production_manifest", "script", "research_dossier"}
+    required = {"final_video", "production_manifest", "script", "script_markdown", "research_dossier"}
     missing_labels = sorted(required - set(files))
     missing_files = [path for path in files.values() if not Path(path).exists()]
     if missing_labels or missing_files:
@@ -169,6 +169,51 @@ def _research_project(project_id: str, model_id: str) -> dict:
     return _store().transition(project_id, "research_ready", artifact=str(paths["research_brief"]))
 
 
+def _render_script_markdown(script_json: str) -> str:
+    data = json.loads(script_json)
+    lines = [
+        f"# {data.get('title', 'Untitled documentary')}",
+        "",
+        f"**Topic:** {data.get('topic', '')}",
+        f"**Estimated runtime:** {data.get('estimated_minutes', 0)} minutes",
+        f"**Target runtime:** {data.get('target_minutes', 0)} minutes",
+        f"**Narration words:** {data.get('total_words', 0)}",
+        "",
+        data.get("description", ""),
+        "",
+        "---",
+        "",
+    ]
+    for beat in data.get("beats", []):
+        lines.extend([
+            f"## {beat.get('label') or beat.get('key', 'Chapter')}",
+            f"<text>{beat.get('words', 0)} words</text>",
+            "",
+        ])
+        for scene in beat.get("scenes", []):
+            lines.extend([
+                f"### {scene.get('title', 'Scene')}",
+                "",
+                scene.get("narration", ""),
+                "",
+            ])
+            visual = (scene.get("visual_direction") or "").strip()
+            if visual:
+                lines.extend([f"**Visual direction:** {visual}", ""])
+            lower = (scene.get("lower_third") or "").strip()
+            if lower:
+                lines.extend([f"**On-screen text:** {lower}", ""])
+    lines.extend(["---", "", "## Research sources", ""])
+    lines.extend(f"- {url}" for url in data.get("sources", []))
+    lines.extend([
+        "",
+        "Read this script alongside the research dossier and claim ledger. "
+        "Approval is required before rendering.",
+        "",
+    ])
+    return "\n".join(lines)
+
+
 def _draft_project_script(project_id: str, model_id: str) -> dict:
     record = _store().get(project_id)
     if record["stage"] != "research_ready":
@@ -204,8 +249,12 @@ def _draft_project_script(project_id: str, model_id: str) -> dict:
     revision_count = int(record.get("revision_count", 0))
     script_name = "script.json" if revision_count == 0 else f"script-revision-{revision_count}.json"
     script_path = project_dir / script_name
-    script_path.write_text(script.to_json() + "\n", encoding="utf-8")
-    return _store().transition(project_id, "script_pending", artifact=str(script_path))
+    script_json = script.to_json()
+    script_path.write_text(script_json + "\n", encoding="utf-8")
+    markdown_path = script_path.with_suffix(".md")
+    markdown_path.write_text(_render_script_markdown(script_json), encoding="utf-8")
+    record = _store().transition(project_id, "script_pending", artifact=str(script_path))
+    return _store().attach_artifact(project_id, "script_markdown", markdown_path)
 
 
 def _render_project(project_id: str) -> dict:
@@ -539,6 +588,7 @@ def deliver(
             not manifest_path.is_file()
             or not master_path.is_file()
             or not script_path.is_file()
+            or not Path(record["artifacts"].get("script_markdown", "")).is_file()
             or not (research_dir / "research_brief.md").is_file()
         ):
             typer.echo(
@@ -572,6 +622,7 @@ def deliver(
         add_file("final_video", master_path, "final.mp4")
         add_file("production_manifest", manifest_path, "production_manifest.json")
         add_file("script", record["artifacts"].get("script", ""), "script.json")
+        add_file("script_markdown", record["artifacts"].get("script_markdown", ""), "script.md")
         for label, source in json.loads(manifest_path.read_text(encoding="utf-8")).get("artifacts", {}).items():
             if label in {"attribution", "subtitles", "srt", "ass", "webvtt", "thumbnail", "thumbnail_1", "thumbnail_2", "thumbnail_3", "description", "chapters", "chapters_json", "chapters_webvtt", "metadata_json", "metadata_md", "qc_report", "qc_final_report", "qc_report_markdown"}:
                 add_file(label, source)
@@ -664,6 +715,7 @@ def status() -> None:
             typer.echo(f"  Revision requested (#{record.get('revision_count', 1)}): {record['pending_revision_feedback']}")
         if stage == "script_pending":
             typer.echo(f"  Script awaiting approval: {artifacts.get('script', 'not recorded')}")
+            typer.echo(f"  Readable script: {artifacts.get('script_markdown', 'not recorded')}")
             typer.echo(f"  Research dossier: {artifacts.get('research_dossier', 'not recorded')}")
         elif stage == "final_pending":
             typer.echo(f"  Final video awaiting approval: {artifacts.get('final_video', 'not recorded')}")
