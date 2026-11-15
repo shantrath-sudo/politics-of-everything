@@ -18,9 +18,9 @@ set -e
 printf '%s\n' "$OUTPUT"
 if [[ $STATUS -ne 0 ]]; then exit $STATUS; fi
 if command -v osascript >/dev/null 2>&1; then
-  if printf '%s' "$OUTPUT" | grep -q 'script_pending'; then
+  if printf '%s' "$OUTPUT" | grep -q -- '-> script_pending'; then
     osascript -e 'display notification "A documentary script is ready for your approval. Run politics-channel status." with title "Politics of Everything"' || true
-  elif printf '%s' "$OUTPUT" | grep -q 'final_pending'; then
+  elif printf '%s' "$OUTPUT" | grep -q -- '-> final_pending'; then
     osascript -e 'display notification "A documentary render is ready for final review. Run politics-channel status." with title "Politics of Everything"' || true
   fi
 fi
