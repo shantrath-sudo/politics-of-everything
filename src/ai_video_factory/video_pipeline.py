@@ -1651,10 +1651,10 @@ def run_video_pipeline(
         trend_source: Which trend providers research may query: "reddit",
             "gnews", or "all" (default). Passed to research_trending_topics.
         longform: When True, generate a long-form documentary script
-            (three-act structure with cold open, ~20-30 minutes of narration)
+            (three-act structure with cold open, 10-15 minutes of narration)
             instead of the default 90-second short script.
         target_duration_minutes: Target narration length for longform mode.
-            Must be between 20 and 30. Ignored when longform is False.
+            For this channel, must be between 10 and 15. Ignored when longform is False.
         draft: When True, render at 640x360 for fast review iterations.
             Draft renders are fingerprinted separately from full renders.
         format_key: YouTube format preset for longform scripts
@@ -1726,18 +1726,55 @@ def run_video_pipeline(
         longform_script: LongformScript | None = None
         if script_path is not None:
             worker_data = json.loads(Path(script_path).read_text(encoding="utf-8"))
-            script = ScriptOutput(
-                title=str(worker_data["title"]),
-                narration=str(worker_data["narration_full"]),
-                scenes=list(worker_data["scenes"]),
-                sources=list(worker_data.get("sources", [trending_topic.url])),
-                captions=list(worker_data.get("captions", [])),
-            )
+            if longform and isinstance(worker_data.get("beats"), list):
+                # Politics of Everything approved scripts use the native
+                # LongformScript schema. Load it directly so rendering does
+                # not invoke a second trend search or regenerate narration.
+                longform_script = longform_script_from_dict(worker_data)
+                if not (10 <= target_duration_minutes <= 15):
+                    raise PipelineCommandError(
+                        "Politics of Everything render target must be between 10 and 15 minutes"
+                    )
+                _verify_longform_duration(longform_script, target_duration_minutes)
+                script = ScriptOutput(
+                    title=longform_script.title,
+                    narration="\\n\\n".join(
+                        scene.narration
+                        for beat in longform_script.beats
+                        for scene in beat.scenes
+                    ),
+                    scenes=[
+                        {
+                            "title": scene.title,
+                            "caption": "",
+                            "narration": scene.narration,
+                            "visual": scene.visual_direction,
+                            "lower_third": scene.lower_third,
+                        }
+                        for beat in longform_script.beats
+                        for scene in beat.scenes
+                    ],
+                    sources=list(longform_script.sources),
+                    captions=[],
+                    generated_at=longform_script.generated_at,
+                )
+                metadata["script_origin"] = "approved_longform_script"
+                metadata["script_words"] = longform_script.total_words
+                metadata["script_estimated_minutes"] = round(longform_script.estimated_minutes, 2)
+                artifacts["script"] = str(Path(script_path))
+            else:
+                script = ScriptOutput(
+                    title=str(worker_data["title"]),
+                    narration=str(worker_data["narration_full"]),
+                    scenes=list(worker_data["scenes"]),
+                    sources=list(worker_data.get("sources", [trending_topic.url])),
+                    captions=list(worker_data.get("captions", [])),
+                )
+                metadata["script_origin"] = "worker"
+                artifacts["script"] = str(Path(script_path))
             job.script_path.write_text(
                 json.dumps(worker_data, indent=2), encoding="utf-8"
             )
-            metadata["script_origin"] = "worker"
-            artifacts["script"] = str(job.script_path)
         elif longform:
             # Long-form documentary path: beats are generated one at a time
             # against a shared series bible, then assembled. Downstream
