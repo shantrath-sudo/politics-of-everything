@@ -1,0 +1,43 @@
+name: Politics of Everything CI
+
+on:
+  push:
+    branches:
+      - channel/bootstrap
+  pull_request:
+    branches:
+      - channel/bootstrap
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Sync locked dependencies
+        run: uv sync --locked --group dev
+
+      - name: Run channel and production tests
+        run: |
+          uv run pytest -q \
+            tests/test_channel_scout.py \
+            tests/test_channel_theme.py \
+            tests/test_scheduler.py \
+            tests/test_longform.py \
+            tests/test_production.py \
+            tests/test_daily_job.py
