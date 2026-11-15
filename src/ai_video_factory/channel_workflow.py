@@ -484,7 +484,7 @@ class WorkflowStore:
         record["pending_revision_feedback"] = note
         previous_artifacts = {
             key: record["artifacts"][key]
-            for key in ("script", "production_manifest", "final_video")
+            for key in ("script", "production_manifest", "final_video", "delivery_package", "delivery_manifest")
             if record["artifacts"].get(key)
         }
         record.setdefault("revision_requests", []).append({
@@ -499,12 +499,45 @@ class WorkflowStore:
         record["approvals"]["final"] = False
         record["artifacts"].pop("production_manifest", None)
         record["artifacts"].pop("final_video", None)
+        record["artifacts"].pop("delivery_package", None)
+        record["artifacts"].pop("delivery_manifest", None)
+        record.pop("delivered_at", None)
         record["updated_at"] = datetime.now(UTC).isoformat()
         record["history"].append({
             "stage": "research_ready",
             "event": "revision_requested",
             "from_stage": current,
             "revision": record["revision_count"],
+        })
+        self._path(project_id).write_text(
+            json.dumps(record, indent=2) + "\n", encoding="utf-8"
+        )
+        return record
+
+    def record_delivery(
+        self, project_id: str, package_dir: str | Path, manifest_path: str | Path
+    ) -> dict[str, Any]:
+        """Record the private review package so final approval cannot happen early."""
+        record = self.get(project_id)
+        if record["stage"] != "final_pending":
+            raise ChannelWorkflowError(
+                f"delivery requires final_pending, got {record['stage']}"
+            )
+        package = Path(package_dir)
+        manifest = Path(manifest_path)
+        if not package.is_dir() or not manifest.is_file():
+            raise ChannelWorkflowError("review package directory or delivery manifest is missing")
+        if record["artifacts"].get("delivery_manifest") == str(manifest):
+            return record
+        record["artifacts"]["delivery_package"] = str(package)
+        record["artifacts"]["delivery_manifest"] = str(manifest)
+        delivered_at = datetime.now(UTC).isoformat()
+        record["delivered_at"] = delivered_at
+        record["updated_at"] = delivered_at
+        record["history"].append({
+            "stage": "final_pending",
+            "event": "review_package_delivered",
+            "delivery_manifest": str(manifest),
         })
         self._path(project_id).write_text(
             json.dumps(record, indent=2) + "\n", encoding="utf-8"
