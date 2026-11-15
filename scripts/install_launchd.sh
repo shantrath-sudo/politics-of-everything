@@ -4,6 +4,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 AGENT_DIR="$HOME/Library/LaunchAgents"
 UID_VALUE="$(id -u)"
 DOMAIN="gui/$UID_VALUE"
+cd "$PROJECT_ROOT"
 mkdir -p "$AGENT_DIR" "$PROJECT_ROOT/data/logs"
 
 UV_BIN="$(command -v uv || true)"
