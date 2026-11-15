@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 import typer
 
 from ai_video_factory.scheduler import TopicLedger
+from ai_video_factory.research_pipeline import classify_source_quality
 from ai_video_factory.channel_workflow import (
     ChannelWorkflowError,
     TopicCandidate,
@@ -316,6 +317,83 @@ def _render_project(project_id: str) -> dict:
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     _store().transition(project_id, "production_ready", artifact=str(manifest_path))
     return _store().transition(project_id, "final_pending", artifact=str(Path(master).resolve()))
+
+@app.command("start-pilot")
+def start_pilot() -> None:
+    """Create the already-approved first documentary project and gather source leads."""
+    config_path = ROOT / "config" / "pilot-topic.toml"
+    try:
+        config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+        title = config["title"]
+        candidate_id = config["candidate_id"]
+        for existing in _store().list():
+            if existing.get("topic", {}).get("title") == title:
+                typer.echo(
+                    f"Pilot project already exists: {existing['project_id']} ({existing['stage']})"
+                )
+                raise typer.Exit(code=0)
+
+        queries = list(config["research_queries"])
+        topic_terms = [term.lower() for term in config.get("topic_terms", [])]
+        candidates, failures = scout_topics(queries, limit=12)
+        matched = [
+            item for item in candidates
+            if any(term in f"{item.title} {item.summary}".lower() for term in topic_terms)
+        ]
+        urls_by_domain: dict[str, list[str]] = {}
+        best = matched[0] if matched else None
+        for item in matched:
+            for url in item.article_urls or [item.url]:
+                if classify_source_quality(url) != "reliable":
+                    continue
+                domain = _publisher_domain(url)
+                if not domain:
+                    continue
+                bucket = urls_by_domain.setdefault(domain, [])
+                if url not in bucket:
+                    bucket.append(url)
+
+        # Take one source per reliable publisher first, then add further corroborating material.
+        selected_urls = [items[0] for items in urls_by_domain.values() if items]
+        for items in urls_by_domain.values():
+            selected_urls.extend(items[1:])
+        max_sources = int(config.get("max_sources", 8))
+        selected_urls = list(dict.fromkeys(selected_urls))[:max_sources]
+        minimum_domains = int(config.get("minimum_reliable_domains", 2))
+        if len(urls_by_domain) < minimum_domains or not selected_urls:
+            raise ChannelWorkflowError(
+                f"pilot source discovery found {len(urls_by_domain)} reliable publisher domains; "
+                f"at least {minimum_domains} are required. Retry the command later."
+            )
+
+        candidate = TopicCandidate(
+            candidate_id=candidate_id,
+            title=title,
+            summary=config["summary"],
+            url=selected_urls[0],
+            publishers=list(urls_by_domain),
+            queries=queries,
+            article_urls=selected_urls,
+            topic_fit=best.topic_fit if best else 0.0,
+            india_relevance=max((item.india_relevance for item in matched), default=0.0),
+            international_relevance=max((item.international_relevance for item in matched), default=0.0),
+            recency=max((item.recency for item in matched), default=0.0),
+            source_diversity=float(len(urls_by_domain)),
+            score=max((item.score for item in matched), default=0.0),
+        )
+        project_id = f"poe-{_today().isoformat()}-{candidate_id}"
+        _store().create(project_id, candidate)
+        record = _store().transition(project_id, "topic_approved")
+        typer.echo(f"Pre-approved pilot topic created: {title}")
+        typer.echo(f"Project: {project_id} | Stage: {record['stage']}")
+        typer.echo(f"Research leads: {len(selected_urls)} URLs across {len(urls_by_domain)} reliable publisher domains")
+        typer.echo("The next scheduled advance will create the research dossier and draft script.")
+        if failures:
+            typer.echo(f"Some pilot queries failed; usable leads were still collected: {len(failures)}")
+    except (OSError, KeyError, ValueError, ChannelWorkflowError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=2)
+
 
 @app.command()
 def scout(
