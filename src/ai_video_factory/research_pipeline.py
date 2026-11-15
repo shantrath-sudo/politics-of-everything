@@ -123,7 +123,7 @@ class EvidenceRecord:
 
     ``id`` ties the record to the model's grouping pass (which only *suggests* which
     records share a fact); correctness is enforced later by resolving IDs back to
-    records and requiring >=2 distinct NASA URLs with supported labels.
+    records and requiring at least two distinct source URLs with supported labels.
     """
 
     id: str
@@ -637,7 +637,9 @@ _RELIABLE_DOMAINS = {
     "gov.uk", "europa.eu", "who.int", "cdc.gov", "nih.gov", "mit.edu",
     "stanford.edu", "nature.com", "sciencedirect.com", "worldbank.org",
     "imf.org", "oecd.org", "un.org", "wto.org", "ilo.org", "unhcr.org",
-    "idea.int", "v-dem.net", "freedomhouse.org", "icj-cij.org",
+    "idea.int", "v-dem.net", "freedomhouse.org", "icj-cij.org", "undp.org", "unep.org",
+    "parliament.uk", "legislation.gov.uk", "congress.gov", "govinfo.gov",
+    "eur-lex.europa.eu", "consilium.europa.eu",
     # Established international reporting
     "bbc.com", "bbc.co.uk", "reuters.com", "apnews.com", "ap.org",
     "theguardian.com", "nytimes.com", "washingtonpost.com", "ft.com",
@@ -645,13 +647,15 @@ _RELIABLE_DOMAINS = {
     # Indian public institutions and research
     "pib.gov.in", "prsindia.org", "eci.gov.in", "rbi.org.in", "mospi.gov.in",
     "indiabudget.gov.in", "sci.gov.in", "supremecourtofindia.nic.in",
-    "legislative.gov.in", "sansad.in", "data.gov.in",
+    "legislative.gov.in", "sansad.in", "data.gov.in", "indiacode.nic.in",
+    "mha.gov.in", "mea.gov.in", "niti.gov.in", "cag.gov.in", "mof.gov.in",
     # Indian journalism and specialist business reporting
     "thehindu.com", "indianexpress.com", "hindustantimes.com", "livemint.com",
     "business-standard.com", "moneycontrol.com",
     # General reference sources
-    "nasa.gov", "nasa", "wikimedia.org", "wikipedia.org", "sciencedaily.com",
+    "nasa.gov", "nasa",
 }
+_SECONDARY_DOMAINS = {"wikipedia.org", "wikimedia.org", "sciencedaily.com"}
 _UNVERIFIED_DOMAINS = {"wordpress.com", "blogspot.com", "tumblr.com"}
 
 
@@ -666,7 +670,7 @@ def classify_source_quality(url: str) -> SourceQuality:
     host = host.lower()
     if any(host == d or host.endswith("." + d) for d in _RELIABLE_DOMAINS):
         return "reliable"
-    if any(host == d or host.endswith("." + d) for d in _UNVERIFIED_DOMAINS):
+    if any(host == d or host.endswith("." + d) for d in _SECONDARY_DOMAINS | _UNVERIFIED_DOMAINS):
         return "secondary"
     return "unverified"
 
@@ -1154,14 +1158,23 @@ _STOPWORDS = frozenset(
      "those", "with", "without", "into", "upon", "their", "there", "here",
      "about", "after", "before", "more", "most", "some", "such", "than", "then"}
 )
-# Domain lexicon for the pilot topic (water beyond Earth / solar-system science).
-_WATER_SPACE_WORDS = frozenset(
-    {"water", "ice", "ocean", "subsurface", "liquid", "hydrogen", "oxidizer",
-     "rover", "mission", "nasa", "mars", "europa", "enceladus", "lunar", "moon",
-     "jupiter", "saturn", "cassini", "juno", "clipper", "crater", "polar",
-     "glacier", "river", "lake", "vapor", "humidity", "propellant", "isru",
-     "solvent", "habitable", "habitability", "life"}
-)
+# General Politics of Everything vocabulary supplements the exact topic terms.
+# It helps when source wording uses a close synonym (e.g. "democratic" for
+# "democracy") without importing the old space-documentary lexicon.
+_CHANNEL_CONTEXT_WORDS = frozenset({
+    "democracy", "democratic", "government", "governance", "politics", "political",
+    "power", "authority", "institution", "institutions", "constitution", "election",
+    "parliament", "legislature", "executive", "judiciary", "court", "law", "policy",
+    "rights", "freedom", "accountability", "oversight", "state", "citizen", "voter",
+    "president", "minister", "cabinet", "administration", "party", "campaign",
+    "public", "official", "regulation", "budget", "tax", "trade", "economy",
+    "economic", "inequality", "labour", "labor", "market", "capital", "corporate",
+    "finance", "financial", "global", "international", "diplomacy", "sanction",
+    "conflict", "war", "geopolitics", "treaty", "china", "india", "technology",
+    "platform", "surveillance", "algorithm", "data", "privacy", "media", "society",
+    "movement", "protest", "culture", "identity", "migration", "climate", "energy",
+    "education", "health", "development", "institutional",
+})
 
 
 def _topic_keywords(topic: str) -> set[str]:
@@ -1251,7 +1264,7 @@ def _normalize_with_offsets(content: str) -> tuple[str, list[int], list[int]]:
 def _clean_excerpt(
     content: str, topic: str, max_chars: int = _EXCERPT_MAX_CHARS
 ) -> SelectedChunk:
-    """Reduce raw fetched page text to a bounded, water/space-relevant excerpt.
+    """Reduce raw fetched page text to a bounded, topic-relevant excerpt.
 
     Strips scripts/styles/HTML tags, splits into sentences, then keeps the densest
     topic-bearing sentences up to ``max_chars`` and fills any remaining budget with
@@ -1283,7 +1296,7 @@ def _clean_excerpt(
         cursor = max(cursor, end)
         candidates.append((sentence, start, end))
 
-    keywords = _WATER_SPACE_WORDS | _topic_keywords(topic)
+    keywords = _CHANNEL_CONTEXT_WORDS | _topic_keywords(topic)
     scored: list[tuple[int, str, int, int]] = []  # (hits, sentence, start, end)
     filler: list[tuple[str, int, int]] = []        # (sentence, start, end)
     seen: set[str] = set()
@@ -1346,7 +1359,7 @@ def _build_claims_from_records(records: list[EvidenceRecord]) -> list[Claim]:
 
     Records are grouped by normalized claim text (whitespace-collapsed, lowercased,
     trailing period stripped). A group is promoted only when it is backed by >=2
-    distinct NASA URLs with supported labels -- genuine cross-source corroboration,
+    distinct independent source URLs with supported labels -- genuine cross-source corroboration,
     not a model heuristic. Unmatched records become single-source claims so no sourced
     material is dropped. Every retained claim carries an auditable verbatim evidence
     quote (validated as a substring of its source during extraction).
