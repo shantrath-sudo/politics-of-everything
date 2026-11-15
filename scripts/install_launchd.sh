@@ -49,6 +49,6 @@ for LABEL in scout advance delivery; do
   launchctl enable "$DOMAIN/com.politics-of-everything.$LABEL"
 done
 
-echo "Installed daily topic scouting (08:00 Asia/Kolkata) and approval-gated workflow checks (every 4 hours)."
+echo "Installed daily topic scouting (08:00), workflow checks (every 4 hours), and Sunday private delivery (09:00 Asia/Kolkata)."
 echo "Logs: $PROJECT_ROOT/data/logs/"
 echo "These jobs do not upload or publish videos."
