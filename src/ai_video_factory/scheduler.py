@@ -57,9 +57,9 @@ class ChannelConfig:
             raise SchedulerError(
                 f"channel {self.slug!r}: privacy must be one of {VALID_PRIVACY}"
             )
-        if not 20 <= self.target_duration_minutes <= 30:
+        if not 10 <= self.target_duration_minutes <= 15:
             raise SchedulerError(
-                f"channel {self.slug!r}: target_duration_minutes must be 20-30"
+                f"channel {self.slug!r}: target_duration_minutes must be 10-15"
             )
         try:
             parsed = dtime.fromisoformat(self.schedule_time)
