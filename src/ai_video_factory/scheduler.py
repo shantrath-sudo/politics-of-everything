@@ -42,7 +42,7 @@ class ChannelConfig:
     slug: str
     topic_focus: str
     theme: str = "space"
-    target_duration_minutes: float = 25.0
+    target_duration_minutes: float = 12.5
     schedule_time: str = "09:00"
     timezone: str = "UTC"
     privacy: str = "unlisted"
