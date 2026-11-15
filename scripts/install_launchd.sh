@@ -16,7 +16,28 @@ if [[ -z "$UV_BIN" ]]; then
 fi
 
 zsh "$PROJECT_ROOT/scripts/install_tts.sh"
+
+for TOOL in ffmpeg ffprobe node npm; do
+  if ! command -v "$TOOL" >/dev/null 2>&1; then
+    echo "Required tool not found: $TOOL. Install FFmpeg and Node.js before scheduling." >&2
+    exit 127
+  fi
+done
+
+npm ci --prefix "$PROJECT_ROOT/remotion"
+npm run build --prefix "$PROJECT_ROOT/remotion"
 "$UV_BIN" run --project "$PROJECT_ROOT" --extra tts politics-channel --help >/dev/null
+
+LMS_BIN="$(command -v lms || true)"
+if [[ -z "$LMS_BIN" && -x "$HOME/.lmstudio/bin/lms" ]]; then
+  LMS_BIN="$HOME/.lmstudio/bin/lms"
+fi
+if [[ -z "$LMS_BIN" ]]; then
+  echo "LM Studio CLI not found. Open LM Studio once and bootstrap lms." >&2
+  exit 127
+fi
+MODEL_KEY="$("$UV_BIN" run --project "$PROJECT_ROOT" python -c 'import tomllib; print(tomllib.load(open("config/inference.toml", "rb"))["model_key"])')"
+"$LMS_BIN" load "$MODEL_KEY" --gpu max --context-length 16384 --estimate-only -y
 
 for LABEL in scout advance; do
   TEMPLATE="$PROJECT_ROOT/launchd/com.politics-of-everything.$LABEL.plist.template"
