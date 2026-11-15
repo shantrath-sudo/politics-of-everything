@@ -17,6 +17,7 @@ from ai_video_factory.research_pipeline import (
     _SourceDeadlineExhausted,
     classify_source_quality,
     collect_sources,
+    _clean_excerpt,
     detect_contradictions,
     extract_claims,
     flag_sensitive_topic,
@@ -27,8 +28,8 @@ from ai_video_factory.research_pipeline import (
 
 
 def test_classify_source_quality() -> None:
-    assert classify_source_quality("https://nasa.gov/image") == "reliable"
-    assert classify_source_quality("https://en.wikipedia.org/wiki/X") == "reliable"
+    assert classify_source_quality("https://prsindia.org/report") == "reliable"
+    assert classify_source_quality("https://en.wikipedia.org/wiki/X") == "secondary"
     assert classify_source_quality("https://blog.wordpress.com/post") == "secondary"
     assert classify_source_quality("https://example.com/x") == "unverified"
 
@@ -327,3 +328,26 @@ def test_run_research_drop_is_auditable_in_digest_and_flag(tmp_path: Path) -> No
     assert base.source_content_hashes == dropped.source_content_hashes
     assert [c.claim_id for c in base.claims] == [c.claim_id for c in dropped.claims]
     assert base.output_digest != dropped.output_digest
+
+
+
+def test_clean_excerpt_prioritizes_political_topic_over_old_space_lexicon():
+    content = (
+        "The spacecraft carries liquid water through an icy subsurface ocean. "
+        "India's Parliament approved the budget after a public accountability debate."
+    )
+    excerpt = _clean_excerpt(
+        content,
+        "India parliamentary budget and public accountability",
+        max_chars=500,
+    )
+    assert excerpt.text.index("India's Parliament") < excerpt.text.index("spacecraft")
+
+
+def test_clean_excerpt_understands_democracy_synonyms():
+    content = (
+        "Democratic institutions distribute authority between parliament, courts, "
+        "and the executive branch. The report describes the legal structure."
+    )
+    excerpt = _clean_excerpt(content, "Who controls democracy?", max_chars=500)
+    assert "Democratic institutions" in excerpt.text
