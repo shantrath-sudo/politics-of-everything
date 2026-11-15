@@ -2,6 +2,13 @@
 
 This is the one-time setup path. Do not run the scheduler until all checks below pass.
 
+## 0. Get the working copy
+
+Clone the working branch (not the untouched upstream-style main branch):
+
+    git clone --branch channel/bootstrap --single-branch https://github.com/shantrath-sudo/politics-of-everything.git
+    cd politics-of-everything
+
 ## 1. Required tools
 
 - macOS on Apple Silicon
