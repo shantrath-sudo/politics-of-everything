@@ -1172,7 +1172,9 @@ _CHANNEL_CONTEXT_WORDS = frozenset({
     "finance", "financial", "global", "international", "diplomacy", "sanction",
     "conflict", "war", "geopolitics", "treaty", "china", "india", "technology",
     "platform", "surveillance", "algorithm", "data", "privacy", "media", "society",
-    "movement", "protest", "culture", "identity", "migration", "climate", "energy",
+    "ai", "artificial", "intelligence", "digital", "cyber", "automation", "machine",
+    "learning", "internet", "censorship", "disinformation", "journalism", "press",
+    "speech", "movement", "protest", "culture", "identity", "migration", "climate", "energy",
     "education", "health", "development", "institutional",
 })
 
