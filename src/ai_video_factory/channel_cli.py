@@ -450,8 +450,10 @@ def deliver(
             continue
         destination = DATA / "deliveries" / today.isoformat() / project_id
         if destination.exists():
-            typer.echo(f"{project_id}: already delivered to {destination}")
-            continue
+            if (destination / "delivery_manifest.json").is_file():
+                typer.echo(f"{project_id}: already delivered to {destination}")
+                continue
+            shutil.rmtree(destination)
         destination.mkdir(parents=True, exist_ok=True)
         files: dict[str, str] = {}
 
