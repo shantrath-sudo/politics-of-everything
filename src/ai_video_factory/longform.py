@@ -261,7 +261,7 @@ def _lm_studio_chat(
     max_tokens: int,
     *,
     api_url: str = "http://localhost:1234/v1/chat/completions",
-    model: str = "qwen3.5-4b-instruct",
+    model: str = "poe-qwen35-4b",
     temperature: float = 0.7,
     timeout: int | None = None,
     json_mode: bool = False,
