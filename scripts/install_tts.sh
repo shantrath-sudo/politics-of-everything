@@ -10,6 +10,6 @@ if [[ -z "$UV_BIN" ]]; then
   exit 127
 fi
 cd "$PROJECT_ROOT"
-"$UV_BIN" sync --project "$PROJECT_ROOT" --extra tts
-"$UV_BIN" run --project "$PROJECT_ROOT" python scripts/download_tts_models.py
-"$UV_BIN" run --project "$PROJECT_ROOT" python scripts/check_tts.py
+"$UV_BIN" sync --project "$PROJECT_ROOT" --dev --extra tts
+"$UV_BIN" run --project "$PROJECT_ROOT" --extra tts python scripts/download_tts_models.py
+"$UV_BIN" run --project "$PROJECT_ROOT" --extra tts python scripts/check_tts.py
