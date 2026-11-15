@@ -1795,7 +1795,7 @@ def run_video_pipeline(
                 _verify_longform_duration(longform_script, target_duration_minutes)
                 script = ScriptOutput(
                     title=longform_script.title,
-                    narration="\\n\\n".join(
+                    narration="\n\n".join(
                         scene.narration
                         for beat in longform_script.beats
                         for scene in beat.scenes
