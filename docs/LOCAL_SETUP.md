@@ -59,7 +59,7 @@ Then run:
 
     zsh scripts/install_launchd.sh
 
-This installs Python dependencies and Kokoro if not already installed, checks the CLI, and registers:
+This installs Python dependencies and Kokoro if not already installed, builds Remotion, loads the configured local model for a real loopback completion smoke test, and only then registers:
 - daily topic scouting at 08:00 Asia/Kolkata
 - approval-gated workflow advancement every four hours
 - private final-review package assembly every Sunday at 09:00
