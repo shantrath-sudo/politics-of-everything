@@ -42,6 +42,9 @@ The project workflow enforces this order:
 
 Commands:
 
+    politics-channel scout --limit 20
+    politics-channel status
+    politics-channel approve-topic CANDIDATE_ID
     politics-channel research PROJECT_ID
     politics-channel draft-script PROJECT_ID
     politics-channel approve-script PROJECT_ID
