@@ -6,6 +6,11 @@ UID_VALUE="$(id -u)"
 DOMAIN="gui/$UID_VALUE"
 cd "$PROJECT_ROOT"
 mkdir -p "$AGENT_DIR" "$PROJECT_ROOT/data/logs"
+FREE_GIB="$(df -Pk "$HOME" | awk 'NR==2 {printf "%.1f", $4/1024/1024}')"
+if ! awk -v free="$FREE_GIB" 'BEGIN { exit !(free >= 18) }'; then
+  echo "At least 18 GiB free disk space is required before downloading models and installing media tools. Available: ${FREE_GIB} GiB." >&2
+  exit 1
+fi
 
 UV_BIN="$(command -v uv || true)"
 if [[ -z "$UV_BIN" && -x /opt/homebrew/bin/uv ]]; then
