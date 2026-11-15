@@ -532,7 +532,13 @@ def scheduler_run(
     data_dir: str = typer.Option(None, "--data-dir", help="YouTube state directory (default: data/youtube)"),
     json_output: bool = typer.Option(False, "--json", help="Output results as JSON"),
 ) -> None:
-    """Run due channels: research, long-form render, unlisted upload, review queue."""
+    """Disabled legacy uploader; this channel uses local approval-only delivery."""
+    typer.echo(
+        "Automatic YouTube upload is disabled for Politics of Everything. "
+        "Use the local channel workflow; publishing requires separate explicit approval.",
+        err=True,
+    )
+    raise typer.Exit(code=2)
     from ai_video_factory.scheduler import (
         ReviewQueue,
         SchedulerBusy,
