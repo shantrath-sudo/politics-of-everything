@@ -53,6 +53,7 @@ zsh "$PROJECT_ROOT/scripts/install_tts.sh"
 npm ci --prefix "$PROJECT_ROOT/remotion"
 npm run build --prefix "$PROJECT_ROOT/remotion"
 "$UV_BIN" run --project "$PROJECT_ROOT" --extra tts politics-channel --help >/dev/null
+"$UV_BIN" run --project "$PROJECT_ROOT" --extra tts politics-channel model-check
 
 for LABEL in scout advance delivery; do
   TEMPLATE="$PROJECT_ROOT/launchd/com.politics-of-everything.$LABEL.plist.template"
