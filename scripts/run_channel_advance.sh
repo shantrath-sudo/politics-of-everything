@@ -21,6 +21,6 @@ if command -v osascript >/dev/null 2>&1; then
   if printf '%s' "$OUTPUT" | grep -q -- '-> script_pending'; then
     osascript -e 'display notification "A documentary script is ready for your approval. Run politics-channel status." with title "Politics of Everything"' || true
   elif printf '%s' "$OUTPUT" | grep -q -- '-> final_pending'; then
-    osascript -e 'display notification "A documentary render is ready for final review. Run politics-channel status." with title "Politics of Everything"' || true
+    osascript -e 'display notification "The final render is ready for preview. The private review package arrives Sunday." with title "Politics of Everything"' || true
   fi
 fi
