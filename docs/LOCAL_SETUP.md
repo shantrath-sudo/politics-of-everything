@@ -108,7 +108,7 @@ The automation stops at each editorial gate. Notifications tell you when action 
 
        politics-channel approve-topic CANDIDATE_ID
 
-2. **Approve the script.** When the script-ready notification arrives, run `politics-channel status`. Open the script path shown, read the complete script and research dossier, then run:
+2. **Approve the script.** When the script-ready notification arrives, run `politics-channel status`. Open the **Readable script** Markdown path shown, read the complete script and research dossier (the JSON script is retained for rendering), then run:
 
        politics-channel approve-script PROJECT_ID
 
