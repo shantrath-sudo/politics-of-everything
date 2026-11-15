@@ -568,6 +568,35 @@ def deliver(
         typer.echo("Final approval is still required. Nothing was published.")
 
 
+@app.command("model-check")
+def model_check() -> None:
+    """Load the configured local model and verify one loopback completion."""
+    session = _new_inference_session()
+    try:
+        model_id = session.start()
+        from ai_video_factory.longform import _lm_studio_chat
+        response = _lm_studio_chat(
+            [
+                {"role": "system", "content": "You are a local inference readiness check."},
+                {"role": "user", "content": "Reply with the single word READY."},
+            ],
+            32,
+            model=model_id,
+        )
+        if not isinstance(response, str) or not response.strip():
+            raise ChannelWorkflowError("local model returned an empty response")
+        typer.echo(f"Local model smoke test passed: {model_id}")
+        typer.echo(f"Response: {response.strip()[:120]}")
+    except Exception as error:
+        typer.echo(f"Local model smoke test failed: {error}", err=True)
+        raise typer.Exit(code=2)
+    finally:
+        try:
+            session.stop()
+        except Exception as error:
+            typer.echo(f"Warning: local model cleanup failed: {error}", err=True)
+
+
 @app.command()
 def status() -> None:
     """Show current projects, disk headroom and the latest scouting report."""
