@@ -11,3 +11,6 @@ def test_sunday_delivery_launchd_job_is_scheduled_for_sunday_at_0900():
     assert interval["Hour"] == 9
     assert interval["Minute"] == 0
     assert config["EnvironmentVariables"]["TZ"] == "Asia/Kolkata"
+    for name in ("scout", "advance"):
+        other = plistlib.loads((root / "launchd" / f"com.politics-of-everything.{name}.plist.template").read_bytes())
+        assert other["EnvironmentVariables"]["TZ"] == "Asia/Kolkata"
