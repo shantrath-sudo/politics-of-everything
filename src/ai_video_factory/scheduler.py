@@ -41,7 +41,7 @@ class ChannelConfig:
     name: str
     slug: str
     topic_focus: str
-    theme: str = "space"
+    theme: str = "generic"
     target_duration_minutes: float = 12.5
     schedule_time: str = "09:00"
     timezone: str = "UTC"
@@ -98,7 +98,7 @@ def load_channels_config(path: Path) -> list[ChannelConfig]:
                 name=str(entry["name"]),
                 slug=str(entry["slug"]),
                 topic_focus=str(entry["topic_focus"]),
-                theme=str(entry.get("theme", "space")),
+                theme=str(entry.get("theme", "generic")),
                 target_duration_minutes=float(entry.get("target_duration_minutes", 12.5)),
                 schedule_time=str(entry.get("schedule_time", "09:00")),
                 timezone=str(entry.get("timezone", "UTC")),
