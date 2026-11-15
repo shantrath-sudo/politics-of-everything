@@ -5,7 +5,8 @@ AGENT_DIR="$HOME/Library/LaunchAgents"
 UID_VALUE="$(id -u)"
 DOMAIN="gui/$UID_VALUE"
 cd "$PROJECT_ROOT"
-if [[ "$(date +%z)" != "+0530" ]]; then
+SYSTEM_OFFSET="$(env -u TZ date +%z)"
+if [[ "$SYSTEM_OFFSET" != "+0530" ]]; then
   echo "Set the Mac time zone to Asia/Kolkata (UTC+05:30) before installing; launchd calendar schedules use the system time zone." >&2
   exit 1
 fi
