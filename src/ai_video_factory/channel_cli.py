@@ -495,7 +495,7 @@ def deliver(
             "- This package is private and local.",
             "- No YouTube upload or publication has occurred.",
         ])
-        (destination / "REVIEW.md").write_text("\\n".join(review_text) + "\\n", encoding="utf-8")
+        (destination / "REVIEW.md").write_text("\n".join(review_text) + "\n", encoding="utf-8")
         delivery_manifest = {
             "project_id": project_id,
             "delivered_at": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
@@ -504,7 +504,7 @@ def deliver(
             "published": False,
         }
         (destination / "delivery_manifest.json").write_text(
-            json.dumps(delivery_manifest, indent=2) + "\\n", encoding="utf-8"
+            json.dumps(delivery_manifest, indent=2) + "\n", encoding="utf-8"
         )
         typer.echo(f"{project_id}: review package ready at {destination}")
         typer.echo("Final approval is still required. Nothing was published.")
