@@ -185,7 +185,7 @@ class MacInferenceSession:
 
     def stop(self) -> None:
         if self.started_model:
-            self._run(["unload", self.identifier], timeout=120.0)
+            self._run(["unload", self.api_model_id or self.identifier], timeout=120.0)
             self.started_model = False
 
     def __enter__(self) -> str:
