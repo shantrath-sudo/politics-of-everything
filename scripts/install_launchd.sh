@@ -37,7 +37,7 @@ if [[ -z "$LMS_BIN" ]]; then
   echo "LM Studio CLI not found. Open LM Studio once and bootstrap lms." >&2
   exit 127
 fi
-MODEL_KEY="$("$UV_BIN" run --project "$PROJECT_ROOT" python -c 'import tomllib; print(tomllib.load(open("config/inference.toml", "rb"))["model_key"])')"
+MODEL_KEY="$("$UV_BIN" run --project "$PROJECT_ROOT" --extra tts python -c 'import tomllib; print(tomllib.load(open("config/inference.toml", "rb"))["model_key"])')"
 "$LMS_BIN" load "$MODEL_KEY" --gpu max --context-length 16384 --estimate-only -y
 
 for LABEL in scout advance; do
