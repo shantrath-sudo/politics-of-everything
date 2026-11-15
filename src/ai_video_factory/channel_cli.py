@@ -8,6 +8,7 @@ from pathlib import Path
 
 import typer
 
+from ai_video_factory.scheduler import TopicLedger
 from ai_video_factory.channel_workflow import (
     ChannelWorkflowError,
     TopicCandidate,
@@ -175,6 +176,8 @@ def approve_final(project_id: str = typer.Argument(...)) -> None:
     """Record final editorial approval. This command never publishes the video."""
     try:
         record = _store().transition(project_id, "final_approved")
+        topic_ledger = TopicLedger(DATA / "topics.jsonl")
+        topic_ledger.add("politics-of-everything", record["topic"]["title"], run_id=project_id)
         typer.echo(f"Final editorial approval recorded: {project_id}")
         typer.echo("No YouTube upload or publication was performed.")
         typer.echo(f"Stage: {record['stage']}")
