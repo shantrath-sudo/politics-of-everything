@@ -29,6 +29,7 @@ from urllib.error import HTTPError as _HTTPError
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 from typing import Any, Callable, Literal, NamedTuple, Sequence
 
 from ai_video_factory.sanitization import sanitize_diagnostic
@@ -669,6 +670,17 @@ _UNVERIFIED_DOMAINS = {
     "reddit.com", "x.com", "twitter.com", "facebook.com", "tiktok.com",
     "news.google.com", "flipboard.com",
 }
+
+
+def _normalized_source_domain(url: str) -> str:
+    """Normalize common publisher subdomains for independent-source checks."""
+    try:
+        host = (urlsplit(url).hostname or "").lower().rstrip(".")
+    except ValueError:
+        return ""
+    while host.startswith(("www.", "m.", "mobile.", "amp.")):
+        host = host.split(".", 1)[1]
+    return host
 
 
 def classify_source_quality(url: str) -> SourceQuality:
@@ -1615,10 +1627,12 @@ def verify_claims(claims: list[Claim], contradictions: list[Contradiction]) -> l
             continue
         if claim.provisional_classification not in {"confirmed fact", "reported claim"}:
             continue
-        reliable_sources = {
-            url for url in claim.source_ids if classify_source_quality(url) == "reliable"
-        }
-        if len(reliable_sources) < 2:
+        reliable_domains = {
+            _normalized_source_domain(url)
+            for url in claim.source_ids
+            if classify_source_quality(url) == "reliable"
+        } - {""}
+        if len(reliable_domains) < 2:
             continue
         verified.append(claim)
     return verified
