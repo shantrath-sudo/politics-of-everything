@@ -153,7 +153,7 @@ def test_run_channel_happy_path(tmp_path):
         return [{"title": "Europa's Ocean", "description": "icy moon"}]
 
     def pipeline(cfg, title, description):
-        assert cfg.target_duration_minutes == 25.0
+        assert cfg.target_duration_minutes == 12.5
         return {"status": "pass", "run_id": "run-1", "artifacts": {}}
 
     def upload(cfg, pipeline_result):
