@@ -90,6 +90,12 @@ Keep the LM Studio server on its default localhost binding; do not enable LAN/ne
 
 ## 6. First verification
 
+After bootstrap succeeds, create the first already-approved documentary project once:
+
+    politics-channel start-pilot
+
+This gathers current source leads from reliable publishers and queues the pilot for research and script drafting. The pilot topic was approved during channel planning; future episodes still require topic approval from the daily shortlist.
+
 Run:
 
     politics-channel scout
