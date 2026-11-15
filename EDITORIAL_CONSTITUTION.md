@@ -27,7 +27,7 @@ D. Commentary, social posts, forums and aggregators: leads only unless independe
 Evaluate authorship, methodology, recency, conflicts of interest and access to underlying evidence. A source category does not guarantee accuracy.
 
 ## Claim ledger
-Each material claim must have: claim ID; exact claim text; classification; source title; publisher/author; URL; publication date; event date when relevant; access date; supporting excerpt or pinpoint reference; corroboration status; confidence; caveats; script scenes using the claim.
+Each material claim must have: claim ID; exact claim text; classification; source title; publisher/author; URL; publication date; event date when relevant; access date; supporting excerpt or pinpoint reference; corroboration status; confidence; caveats; script scenes using the claim. A claim may be labelled a verified fact only when corroborated by at least two distinct reliable publisher domains. Secondary, social, forum, aggregator and unverified sources may provide leads or attributed context but cannot by themselves promote a claim to verified fact.
 
 Claims that cannot be verified are removed, rewritten as clearly attributed claims, or explicitly framed as uncertainty.
 
