@@ -572,9 +572,11 @@ def deliver(
             "final_approval_required": True,
             "published": False,
         }
-        (destination / "delivery_manifest.json").write_text(
+        delivery_manifest_path = destination / "delivery_manifest.json"
+        delivery_manifest_path.write_text(
             json.dumps(delivery_manifest, indent=2) + "\n", encoding="utf-8"
         )
+        _store().record_delivery(project_id, destination, delivery_manifest_path)
         typer.echo(f"{project_id}: review package ready at {destination}")
         typer.echo("Final approval is still required. Nothing was published.")
 
