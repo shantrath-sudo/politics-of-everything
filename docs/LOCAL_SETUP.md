@@ -92,3 +92,22 @@ Run:
 After a topic is explicitly approved, the scheduled advance command performs research and script drafting, then pauses for script approval. After script approval it renders and pauses for final approval.
 
 No YouTube upload or publication is performed.
+
+
+## 7. Human approval steps
+
+The automation stops at each editorial gate. Notifications tell you when action is needed.
+
+1. **Choose the topic.** Open the latest Markdown shortlist in `data/channel/scouting/`. Copy the candidate ID and run:
+
+       politics-channel approve-topic CANDIDATE_ID
+
+2. **Approve the script.** When the script-ready notification arrives, run `politics-channel status`. Open the script path shown, read the complete script and research dossier, then run:
+
+       politics-channel approve-script PROJECT_ID
+
+3. **Approve the final video.** When the final-render notification arrives, run `politics-channel status`. Watch the MP4 and inspect the review package. If it meets the channel standard, run:
+
+       politics-channel approve-final PROJECT_ID
+
+The Sunday delivery job assembles a private review folder under `data/deliveries/`. Final approval records your decision; it does not upload or publish anything. If you reject a script or video, do not approve it—the workflow remains paused for correction.
