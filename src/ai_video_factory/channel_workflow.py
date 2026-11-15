@@ -481,10 +481,16 @@ class WorkflowStore:
 
         record["revision_count"] = int(record.get("revision_count", 0)) + 1
         record["pending_revision_feedback"] = note
+        previous_artifacts = {
+            key: record["artifacts"][key]
+            for key in ("script", "production_manifest", "final_video")
+            if record["artifacts"].get(key)
+        }
         record.setdefault("revision_requests", []).append({
             "revision": record["revision_count"],
             "from_stage": current,
             "feedback": note,
+            "previous_artifacts": previous_artifacts,
             "requested_at": datetime.now(UTC).isoformat(),
         })
         record["stage"] = "research_ready"
