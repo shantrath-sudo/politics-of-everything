@@ -40,7 +40,12 @@ _HTTP_TIMEOUT = 15
 _SYNTHETIC_ENV_VAR = "AVF_ALLOW_SYNTHETIC_RESEARCH"
 
 _REDDIT_BASE = "https://www.reddit.com"
-_GNEWS_RSS = "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
+_GNEWS_RSS = "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en"
+_GNEWS_RSS_FEEDS = (
+    _GNEWS_RSS,
+    "https://news.google.com/rss?hl=en-GB&gl=GB&ceid=GB:en",
+    "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en",
+)
 
 # Relative trust weighting used when ranking merged topics.
 _SOURCE_WEIGHTS = {
@@ -81,7 +86,7 @@ class RedditProvider:
 
     def __init__(
         self,
-        subreddits: tuple[str, ...] = ("Documentaries", "science", "technology", "news"),
+        subreddits: tuple[str, ...] = ("worldnews", "geopolitics", "india", "economics", "politics", "PoliticalScience", "history", "technology"),
         timeout: int = _HTTP_TIMEOUT,
     ) -> None:
         self.subreddits = subreddits
@@ -121,46 +126,61 @@ class RedditProvider:
 
 
 class GoogleNewsProvider:
-    """Top stories from the Google News RSS feed."""
+    """Top stories from India, UK and US Google News RSS editions."""
 
-    def __init__(self, feed_url: str = _GNEWS_RSS, timeout: int = _HTTP_TIMEOUT) -> None:
-        self.feed_url = feed_url
+    def __init__(self, feed_url: str | None = None, timeout: int = _HTTP_TIMEOUT) -> None:
+        # India is the lead edition; UK and US editions broaden international coverage.
+        # Supplying feed_url preserves the single-feed test/custom-provider interface.
+        self.feed_urls = (feed_url,) if feed_url else _GNEWS_RSS_FEEDS
         self.timeout = timeout
 
     def fetch(self, limit: int) -> list[dict]:
-        raw = _http_get(self.feed_url, timeout=self.timeout)
-        root = ET.fromstring(raw)
         topics: list[dict] = []
-        for item in root.iter("item"):
-            title = (item.findtext("title") or "").strip()
-            if not title:
+        seen: set[str] = set()
+        errors: list[str] = []
+        for feed_url in self.feed_urls:
+            try:
+                raw = _http_get(feed_url, timeout=self.timeout)
+                root = ET.fromstring(raw)
+            except Exception as error:  # one unavailable edition must not hide others
+                errors.append(f"{feed_url}: {error}")
                 continue
-            link = (item.findtext("link") or "").strip()
-            published = None
-            pub_date = item.findtext("pubDate")
-            if pub_date:
-                try:
-                    published = parsedate_to_datetime(pub_date)
-                    if published.tzinfo is None:
-                        published = published.replace(tzinfo=timezone.utc)
-                except (TypeError, ValueError):
-                    published = None
-            source_el = item.find("source")
-            source_name = (
-                (source_el.text or "").strip() if source_el is not None else "Google News"
-            )
-            topics.append(
-                {
-                    "title": title,
-                    "description": f"Top story via {source_name}",
-                    "source": "google_news",
-                    "url": link,
-                    "published": published,
-                    "score": None,
-                }
-            )
-            if len(topics) >= limit:
-                break
+            for item in root.iter("item"):
+                title = (item.findtext("title") or "").strip()
+                if not title:
+                    continue
+                key = _normalize_title(title)
+                if not key or key in seen:
+                    continue
+                seen.add(key)
+                link = (item.findtext("link") or "").strip()
+                published = None
+                pub_date = item.findtext("pubDate")
+                if pub_date:
+                    try:
+                        published = parsedate_to_datetime(pub_date)
+                        if published.tzinfo is None:
+                            published = published.replace(tzinfo=timezone.utc)
+                    except (TypeError, ValueError):
+                        published = None
+                source_el = item.find("source")
+                source_name = (
+                    (source_el.text or "").strip() if source_el is not None else "Google News"
+                )
+                topics.append(
+                    {
+                        "title": title,
+                        "description": f"Top story via {source_name}",
+                        "source": "google_news",
+                        "url": link,
+                        "published": published,
+                        "score": None,
+                    }
+                )
+                if len(topics) >= limit:
+                    return topics
+        if not topics and errors:
+            raise ResearchError("all configured Google News editions failed: " + "; ".join(errors))
         return topics
 
 
