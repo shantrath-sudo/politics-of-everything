@@ -31,10 +31,10 @@ QUEUE_STATUSES = ("pending", "approved", "rejected", "failed")
 
 @dataclass
 class NightlyConfig:
-    topics_per_night: int = 3
+    topics_per_night: int = 1
     trend_source: str = "all"
-    theme: str = "space"
-    target_duration_minutes: float = 25.0
+    theme: str = "politics-of-everything"
+    target_duration_minutes: float = 12.5
     llm_url: str = "http://localhost:8080/v1/chat/completions"
     date: str | None = None
 
