@@ -72,4 +72,4 @@ def test_launchd_templates_define_daily_advance_and_sunday_delivery():
     delivery = plistlib.loads((root / "com.politics-of-everything.delivery.plist.template").read_bytes())
     assert scout["StartCalendarInterval"] == {"Hour": 8, "Minute": 0}
     assert advance["StartInterval"] == 14_400
-    assert delivery["StartCalendarInterval"] == {"Weekday": 1, "Hour": 9, "Minute": 0}
+    assert delivery["StartCalendarInterval"] == {"Weekday": 0, "Hour": 9, "Minute": 0}
