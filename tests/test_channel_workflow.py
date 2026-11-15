@@ -126,3 +126,18 @@ def test_article_resolver_rejects_non_https_links_without_network():
         _resolve_article_url("http://example.com/story")
     with pytest.raises(ChannelWorkflowError, match="HTTPS"):
         _resolve_article_url("https://user:password@example.com/story")
+
+
+
+def test_scout_queries_both_india_and_international_editions():
+    requested = []
+    candidates = scout_topics(
+        queries=["political power"],
+        transport=lambda url: requested.append(url) or RSS,
+        now=datetime(2026, 11, 15, 12, tzinfo=UTC),
+        limit=10,
+        resolver=lambda url: url,
+    )
+    assert candidates
+    assert any("hl=en-IN" in url and "gl=IN" in url for url in requested)
+    assert any("hl=en-US" in url and "gl=US" in url for url in requested)
