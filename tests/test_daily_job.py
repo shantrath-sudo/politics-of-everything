@@ -116,6 +116,41 @@ def _config(**overrides) -> JobConfig:
     return cfg
 
 
+class _FastOfflineRenderEngine(OfflineRenderEngine):
+    """Fast, deterministic long-duration render for orchestration tests.
+
+    The normal offline engine encodes every scene at full frame rate, which is
+    unnecessarily expensive in CI. This test double keeps the target duration,
+    resolution, 30-fps output, changing picture samples, and continuous audio,
+    while generating only two unique source frames per second.
+    """
+
+    def render_master(self, edit, *, narration_segments, assets_by_scene_id, destination):
+        import subprocess
+
+        destination = Path(destination)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        fps = int(edit.fps)
+        duration = sum(scene.duration_frames for scene in edit.scenes) / fps
+        subprocess.run(
+            [
+                "ffmpeg", "-y",
+                "-f", "lavfi", "-i",
+                f"testsrc2=size={int(edit.width)}x{int(edit.height)}:rate=2:duration={duration:.3f}",
+                "-f", "lavfi", "-i",
+                f"sine=frequency=440:sample_rate=48000:duration={duration:.3f}",
+                "-vf", f"fps={fps}",
+                "-af", "volume=0.25",
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "35",
+                "-pix_fmt", "yuv420p", "-r", str(fps),
+                "-c:a", "aac", "-b:a", "96k", "-shortest",
+                str(destination),
+            ],
+            check=True, capture_output=True, text=True, timeout=180,
+        )
+        return destination
+
+
 class _BlackMasterEngine(OfflineRenderEngine):
     """Render engine that produces an all-black master (fails the visual gate).
 
@@ -170,7 +205,7 @@ def test_deterministic_extractor_used_in_production(tmp_path: Path) -> None:
                     ))
         return claims
 
-    result = run_daily_job(tmp_path, config=_config(production_extractor=injected), engine=OfflineRenderEngine())  # type: ignore[arg-type]
+    result = run_daily_job(tmp_path, config=_config(production_extractor=injected), engine=_FastOfflineRenderEngine())  # type: ignore[arg-type]
     # Extraction runs once per persisted source; this candidate carries three sources,
     # so the injected extractor's topic is recorded once per source call.
     assert calls == ["Local AI Trends"] * 3
