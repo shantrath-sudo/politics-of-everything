@@ -478,7 +478,14 @@ def run_daily_job(
             approval_path=None,
             research_packages=research_dirs,
             gates_passed=False,
-            failure_reason=f"final QC failed: {qc_summary.status}",
+            failure_reason=(
+                f"final QC failed: {qc_summary.status}; "
+                + "; ".join(
+                    f"{gate.name}: {gate.detail}"
+                    for gate in gate_results
+                    if not gate.passed
+                )
+            ),
             timings_seconds=timings,
             artifacts={
                 "gate_failures": [g.to_dict() for g in gate_results if not g.passed],
