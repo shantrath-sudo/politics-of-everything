@@ -175,6 +175,19 @@ def test_deterministic_extractor_used_in_production(tmp_path: Path) -> None:
     # so the injected extractor's topic is recorded once per source call.
     assert calls == ["Local AI Trends"] * 3
     assert result.status == "blocked_on_approval", result.failure_reason
+    assert result.approval_path is not None
+    approval_path = Path(result.approval_path)
+    assert approval_path.is_file()
+    assert json.loads(approval_path.read_text())["status"] == "pending"
+    package_root = approval_path.parent
+    for artifact in (
+        "master.mp4",
+        "captions.srt",
+        "captions.webvtt",
+        "rights_manifest.json",
+        "package.json",
+    ):
+        assert (package_root / artifact).is_file(), artifact
 
 
 # ========== 2. LLM availability does not change test outcomes ==========
