@@ -174,7 +174,7 @@ def test_deterministic_extractor_used_in_production(tmp_path: Path) -> None:
     # Extraction runs once per persisted source; this candidate carries three sources,
     # so the injected extractor's topic is recorded once per source call.
     assert calls == ["Local AI Trends"] * 3
-    assert result.status == "blocked_on_approval"
+    assert result.status == "blocked_on_approval", result.failure_reason
 
 
 # ========== 2. LLM availability does not change test outcomes ==========
@@ -201,7 +201,7 @@ def test_llm_availability_does_not_change_outcome(tmp_path: Path) -> None:
         return claims
 
     result = run_daily_job(tmp_path, config=_config(production_extractor=injected), engine=OfflineRenderEngine())  # type: ignore[arg-type]
-    assert result.status == "blocked_on_approval"
+    assert result.status == "blocked_on_approval", result.failure_reason
 
 
 # ========== 3. production without a configured renderer fails safely ========
@@ -341,7 +341,7 @@ def test_build_candidate_writes_rights_manifest(tmp_path: Path) -> None:
 def test_rerun_reuses_valid_stages(tmp_path: Path) -> None:
     """A second run reuses the rendered candidate instead of rebuilding it."""
     first = run_daily_job(tmp_path, config=_config(), engine=OfflineRenderEngine())  # type: ignore[arg-type]
-    assert first.status == "blocked_on_approval"
+    assert first.status == "blocked_on_approval", first.failure_reason
     assert not first.artifacts.get("reused_candidate", True)
 
     second = run_daily_job(tmp_path, config=_config(), engine=OfflineRenderEngine())  # type: ignore[arg-type]
