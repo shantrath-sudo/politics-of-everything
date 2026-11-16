@@ -9,8 +9,8 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 3 | Channel configuration and editorial identity | COMPLETE | Channel config, editorial constitution, production plan and fixed decisions committed |
 | 4 | Daily topic discovery and scoring | COMPLETE | Query-based Google News RSS scouting across India, UK and US editions, topic scoring, clustering, publisher URL resolution and CI tests |
 | 5 | Duplicate detection and topic ledger | COMPLETE | Covered-topic ledger checked during scouting; updated only after final approval |
-| 6 | Research dossier and source-quality rules | IN PROGRESS | Secure research pipeline uses political/institutional source profiles and channel-relevant excerpt selection; real publisher fetch/extraction still needs Mac smoke test |
-| 7 | Claim ledger and corroboration | IN PROGRESS | Source, claim, contradiction and verified-fact artifacts integrated; verified facts require two independent reliable publisher domains; real dossier not yet generated |
+| 6 | Research dossier and source-quality rules | IN PROGRESS | HTTPS-only research transport validates every redirect destination, blocks private/loopback/link-local/reserved hosts, caps redirects/body size and enforces bounded request deadlines; real publisher fetch/extraction still needs Mac smoke test |
+| 7 | Claim ledger and corroboration | IN PROGRESS | Source, claim, contradiction and verified-fact artifacts integrated; verbatim evidence grounding and two independent reliable publisher domains required for promotion; real dossier not yet generated |
 | 8 | 10–15 minute script engine | COMPLETE | Runtime limits, political documentary prompt, longer research context and CI tests |
 | 9 | Topic/script/final approval gates | COMPLETE | Persistent fail-closed state transitions; explicit topic, script and final approval commands |
 | 10 | Local narration and Mac resource profile | IN PROGRESS | 4B-class local inference profile configured; model and TTS need installation/readiness test |
@@ -24,9 +24,19 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 
 ## Verified CI
 
-The channel-critical GitHub Actions workflow passed on commit 099d3da7ffc8883665775fc8f175156214a2ea16 (run 43883920995): **349 tests passed, 0 failed**, in 1429 seconds (23 minutes 49 seconds). The run included the publisher approval-safety tests, daily-job integration tests, research/provenance, production/QC, packaging, local inference, scheduling and channel workflow tests, plus Python compilation, CLI help and zsh syntax checks.
+The latest channel-critical GitHub Actions workflow passed on commit d3645a83ade2c7c49b62c4934f2c2f9c5af2f70e (run 43892189633): **352 tests passed, 0 failed**, in 2172.83 seconds (36 minutes 12 seconds). This run verified the 40-minute job timeout, Python compilation, CLI help, zsh launcher syntax, publisher approval-safety tests, daily-job integration tests, research/provenance, production/QC, packaging, local inference, scheduling, and the new redirect-target security regression tests.
 
-A subsequent workflow edit set the job timeout to 40 minutes because the measured full suite exceeded the prior 15-minute timeout. That updated workflow configuration still requires its own successful CI run. This CI verifies repository code on GitHub's Linux runner; it does not prove a live Mac render, real-source research run, actual local model inference or local TTS.
+The full suite currently has limited timeout headroom: 36m12s against a 40-minute job limit. The three slowest tests consumed approximately 904s, 473s and 472s. Test-runtime optimization is a repository-side follow-up before relying on this CI margin. Pillow also emitted 15,168 deprecation warnings from use of Image.Image.getdata; these did not fail the run and should be cleaned up separately.
+
+This CI verifies repository code on GitHub's Linux runner; it does not prove a live Mac render, real-source research run, actual local model inference or local TTS.
+
+## Research audit notes
+
+- The research production path fetches actual source text and refuses URL-only extraction.
+- Extracted claims must include verbatim quotes grounded inside a selected source-text slice.
+- Promotion requires supported claim labels, no detected unresolved contradiction, and two independent reliable publisher domains.
+- The redirect fix validates each hop before the next request. DNS is resolved for validation and then resolved again by the HTTP client at connection time; DNS rebinding is therefore a residual hardening concern, not a guarantee of complete SSRF immunity.
+- The separate citation URL verifier still uses urllib's automatic redirect handling; it verifies liveness rather than extracting source content, but its redirect behavior remains part of the security audit.
 
 ## Fixed configuration
 - Channel: Politics of Everything
