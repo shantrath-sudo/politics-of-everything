@@ -481,7 +481,7 @@ def run_daily_job(
             failure_reason=(
                 f"final QC failed: {qc_summary.status}; "
                 + "; ".join(
-                    f"{gate.name}: {gate.detail}"
+                    f"{gate.gate}: {gate.detail}"
                     for gate in gate_results
                     if not gate.passed
                 )
