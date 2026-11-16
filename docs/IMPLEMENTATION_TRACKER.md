@@ -23,7 +23,10 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 17 | Operational activation | PENDING | Requires local setup, full rehearsal and explicit user go-ahead; publishing remains disabled |
 
 ## Verified CI
-The channel-critical GitHub Actions workflow passed on commit 9c76bd7d: 159 tests passed. Coverage includes topic discovery/workflow (India + international RSS editions), readable shortlist reports, political excerpt selection, reliable independent-source corroboration, channel CLI approval and revision cycles, delivery, Sunday launchd scheduling, long-form duration, format, local model smoke-test lifecycle, scheduler and inference tests, plus Python compilation and zsh launcher syntax checks. This verifies repository code in CI; it does not prove a live Mac render, real-source research run, actual local model inference or local TTS.
+
+The channel-critical GitHub Actions workflow passed on commit 099d3da7ffc8883665775fc8f175156214a2ea16 (run 43883920995): **349 tests passed, 0 failed**, in 1429 seconds (23 minutes 49 seconds). The run included the publisher approval-safety tests, daily-job integration tests, research/provenance, production/QC, packaging, local inference, scheduling and channel workflow tests, plus Python compilation, CLI help and zsh syntax checks.
+
+A subsequent workflow edit set the job timeout to 40 minutes because the measured full suite exceeded the prior 15-minute timeout. That updated workflow configuration still requires its own successful CI run. This CI verifies repository code on GitHub's Linux runner; it does not prove a live Mac render, real-source research run, actual local model inference or local TTS.
 
 ## Fixed configuration
 - Channel: Politics of Everything
