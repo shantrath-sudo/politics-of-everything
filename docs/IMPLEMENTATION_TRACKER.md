@@ -24,11 +24,11 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 
 ## Verified CI
 
-The latest channel-critical GitHub Actions workflow passed on commit 44840413f8922d09ecf066f04ba7226315e34af3 (run 43901893248): **352 tests passed, 0 failed**, in 1296.71 seconds (21 minutes 36 seconds) for the test suite. The complete workflow ran from 15:56:19Z to 16:18:44Z. This verifies the 2-fps long-form test proxy optimization, publisher approval-safety tests, daily-job orchestration, research/provenance and redirect-target security regressions, production/QC, packaging, local inference, scheduling, Python compilation, CLI help and zsh launcher syntax. Production video settings remain unchanged; the proxy is test-only.
+The latest channel-critical GitHub Actions workflow passed on commit 4df69a032ad7dec5091d92add508fddf1ddb2190 (run 43906366803): **352 tests passed, 0 failed**, in 1247.11 seconds (20 minutes 47 seconds) for the test suite. The complete workflow finished successfully at 16:42:27Z. This verifies the Pillow pixel-access deprecation cleanup in addition to the 2-fps long-form test proxy optimization, publisher approval-safety tests, daily-job orchestration, research/provenance and redirect-target security regressions, production/QC, packaging, local inference, scheduling, Python compilation, CLI help and zsh launcher syntax. Production video settings remain unchanged; the proxy is test-only.
 
 The test suite runtime improved from 2172.83 seconds (36m12s) on commit d3645a83ade2c7c49b62c4934f2c2f9c5af2f70e to 1296.71 seconds (21m36s), reducing runtime by approximately 40%. The 40-minute CI timeout now has comfortable headroom.
 
-The run emitted 15,168 Pillow deprecation warnings from `Image.Image.getdata` at `src/ai_video_factory/production.py:272` (15,166 daily-job warnings and 2 production warnings). These did not fail tests. Replace the deprecated API with its supported equivalent and retain image-analysis behavior in a follow-up cleanup.
+The Pillow deprecation cleanup replaced `Image.Image.getdata` with `gray.tobytes()` in `src/ai_video_factory/production.py`. The follow-up CI run passed all 352 tests; the pytest output contained no Pillow deprecation warnings. GitHub Actions also emitted a separate Node.js 20 deprecation notice for its workflow actions; this is an upstream CI-runtime warning, not a Python test warning.
 
 This CI verifies repository code on GitHub's Linux runner; it does not prove a live Mac render, real-source research run, actual local model inference or local TTS.
 
