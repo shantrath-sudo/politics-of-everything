@@ -463,7 +463,7 @@ def run_daily_job(
     _note_stage("qc")
 
     # ---- Stage 5: final QC on real artifacts (fail-closed) ----
-    qc_summary, gate_results = _run_final_qc(chosen, candidate, research_dirs)
+    qc_summary, gate_results = _run_final_qc(chosen, candidate, research_dirs, min_words=config.min_words)
     timings["qc"] = round(time.monotonic() - t0, 3)
     _note_stage("package")
 
@@ -793,7 +793,11 @@ def _read_narration_words(candidate_dir: Path) -> str:
 
 
 def _run_final_qc(
-    chosen: ResearchResult, candidate: Any, research_dirs: list[str]
+    chosen: ResearchResult,
+    candidate: Any,
+    research_dirs: list[str],
+    *,
+    min_words: int = 2200,
 ) -> tuple[Any, list[Any]]:
     """Run the full editorial/rights/technical/editorial QC suite on real artifacts.
 
@@ -862,7 +866,7 @@ def _run_final_qc(
         # visual diversity against real values.
         evaluate_originality(
             narration_word_count=candidate.narration_word_count,
-            min_words=2200,
+            min_words=min_words,
             distinct_scenes=len({s.title for s in edit.scenes if s.kind == "normal"}),
             total_scenes=total_scenes,
         ),
