@@ -269,7 +269,7 @@ def video_min_contrast(mp4: Path, *, sample_hz: float = 2.0) -> float:
         for f in frames:
             with Image.open(f) as im:
                 gray = im.convert("L")
-                px = list(gray.getdata())
+                px = gray.tobytes()
             if not px:
                 continue
             lo, hi = min(px), max(px)
