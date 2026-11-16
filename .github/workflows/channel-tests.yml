@@ -14,12 +14,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: channel-tests-${{ github.ref }}
+  group: channel-tests-v2-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -42,7 +43,7 @@ jobs:
         run: uv run --extra tts politics-channel --help
       - name: Run channel and inference tests
         run: >-
-          uv run pytest -q
+          uv run pytest -vv --durations=20
           tests/test_channel_workflow.py
           tests/test_channel_cli.py
           tests/test_channel_revision.py
