@@ -48,6 +48,7 @@ jobs:
           tests/test_channel_revision.py
           tests/test_launchd_schedule.py
           tests/test_channel_delivery.py
+          tests/test_publisher.py
           tests/test_channel_theme.py
           tests/test_mac_inference.py
           tests/test_longform.py
