@@ -120,9 +120,10 @@ class _FastOfflineRenderEngine(OfflineRenderEngine):
     """Fast, deterministic long-duration render for orchestration tests.
 
     The normal offline engine encodes every scene at full frame rate, which is
-    unnecessarily expensive in CI. This test double keeps the target duration,
-    resolution, 30-fps output, changing picture samples, and continuous audio,
-    while generating only two unique source frames per second.
+    unnecessarily expensive in CI. Final QC checks duration, resolution, picture
+    samples and audio—not delivery frame rate—so this test double emits a 2-fps
+    long-form proxy while preserving target duration, resolution, changing picture
+    samples and continuous audio. Separate renderer tests cover production frame rate.
     """
 
     def render_master(self, edit, *, narration_segments, assets_by_scene_id, destination):
@@ -139,10 +140,9 @@ class _FastOfflineRenderEngine(OfflineRenderEngine):
                 f"testsrc2=size={int(edit.width)}x{int(edit.height)}:rate=2:duration={duration:.3f}",
                 "-f", "lavfi", "-i",
                 f"sine=frequency=440:sample_rate=48000:duration={duration:.3f}",
-                "-vf", f"fps={fps}",
                 "-af", "volume=0.25",
                 "-c:v", "libx264", "-preset", "ultrafast", "-crf", "35",
-                "-pix_fmt", "yuv420p", "-r", str(fps),
+                "-pix_fmt", "yuv420p", "-r", "2",
                 "-c:a", "aac", "-b:a", "96k", "-shortest",
                 str(destination),
             ],
@@ -169,7 +169,7 @@ class _BlackMasterEngine(OfflineRenderEngine):
         subprocess.run(
             [
                 "ffmpeg", "-y", "-f", "lavfi",
-                "-i", f"color=c=black:s=1280x720:r={fps}:duration={duration:.3f}",
+                "-i", f"color=c=black:s=1280x720:r=2:duration={duration:.3f}",
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", str(destination),
             ],
             check=True, capture_output=True, text=True,
@@ -392,7 +392,7 @@ def test_rerun_reuses_valid_stages(tmp_path: Path) -> None:
     assert first.status == "blocked_on_approval", first.failure_reason
     assert not first.artifacts.get("reused_candidate", True)
 
-    second = run_daily_job(tmp_path, config=_config(), engine=OfflineRenderEngine())  # type: ignore[arg-type]
+    second = run_daily_job(tmp_path, config=_config(), engine=_FastOfflineRenderEngine())  # type: ignore[arg-type]
     assert second.status == "blocked_on_approval"
     assert second.artifacts.get("reused_candidate") is True
 
