@@ -24,9 +24,11 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 
 ## Verified CI
 
-The latest channel-critical GitHub Actions workflow passed on commit d3645a83ade2c7c49b62c4934f2c2f9c5af2f70e (run 43892189633): **352 tests passed, 0 failed**, in 2172.83 seconds (36 minutes 12 seconds). This run verified the 40-minute job timeout, Python compilation, CLI help, zsh launcher syntax, publisher approval-safety tests, daily-job integration tests, research/provenance, production/QC, packaging, local inference, scheduling, and the new redirect-target security regression tests.
+The latest channel-critical GitHub Actions workflow passed on commit 44840413f8922d09ecf066f04ba7226315e34af3 (run 43901893248): **352 tests passed, 0 failed**, in 1296.71 seconds (21 minutes 36 seconds) for the test suite. The complete workflow ran from 15:56:19Z to 16:18:44Z. This verifies the 2-fps long-form test proxy optimization, publisher approval-safety tests, daily-job orchestration, research/provenance and redirect-target security regressions, production/QC, packaging, local inference, scheduling, Python compilation, CLI help and zsh launcher syntax. Production video settings remain unchanged; the proxy is test-only.
 
-The full suite currently has limited timeout headroom: 36m12s against a 40-minute job limit. The three slowest tests consumed approximately 904s, 473s and 472s. Test-runtime optimization is a repository-side follow-up before relying on this CI margin. Pillow also emitted 15,168 deprecation warnings from use of Image.Image.getdata; these did not fail the run and should be cleaned up separately.
+The test suite runtime improved from 2172.83 seconds (36m12s) on commit d3645a83ade2c7c49b62c4934f2c2f9c5af2f70e to 1296.71 seconds (21m36s), reducing runtime by approximately 40%. The 40-minute CI timeout now has comfortable headroom.
+
+The run emitted 15,168 Pillow deprecation warnings from `Image.Image.getdata` at `src/ai_video_factory/production.py:272` (15,166 daily-job warnings and 2 production warnings). These did not fail tests. Replace the deprecated API with its supported equivalent and retain image-analysis behavior in a follow-up cleanup.
 
 This CI verifies repository code on GitHub's Linux runner; it does not prove a live Mac render, real-source research run, actual local model inference or local TTS.
 
