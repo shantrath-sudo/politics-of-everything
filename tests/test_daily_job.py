@@ -248,7 +248,7 @@ def test_llm_availability_does_not_change_outcome(tmp_path: Path) -> None:
                     ))
         return claims
 
-    result = run_daily_job(tmp_path, config=_config(production_extractor=injected), engine=OfflineRenderEngine())  # type: ignore[arg-type]
+    result = run_daily_job(tmp_path, config=_config(production_extractor=injected), engine=_FastOfflineRenderEngine())  # type: ignore[arg-type]
     assert result.status == "blocked_on_approval", result.failure_reason
 
 
@@ -388,7 +388,7 @@ def test_build_candidate_writes_rights_manifest(tmp_path: Path) -> None:
 
 def test_rerun_reuses_valid_stages(tmp_path: Path) -> None:
     """A second run reuses the rendered candidate instead of rebuilding it."""
-    first = run_daily_job(tmp_path, config=_config(), engine=OfflineRenderEngine())  # type: ignore[arg-type]
+    first = run_daily_job(tmp_path, config=_config(), engine=_FastOfflineRenderEngine())  # type: ignore[arg-type]
     assert first.status == "blocked_on_approval", first.failure_reason
     assert not first.artifacts.get("reused_candidate", True)
 
