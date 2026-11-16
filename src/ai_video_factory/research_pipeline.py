@@ -465,27 +465,42 @@ def make_secure_http_transport(
             response.close()
         return raw, ctype
 
+    def _validated_url(candidate: str) -> str:
+        """Validate every fetch/redirect target and strip embedded userinfo."""
+        try:
+            parts = urllib.parse.urlsplit(candidate)
+            scheme = (parts.scheme or "").lower()
+            hostname = (parts.hostname or "").lower()
+        except ValueError as exc:
+            raise ResearchError(f"invalid source URL {candidate!r}: {exc}") from exc
+        if scheme != "https":
+            raise ResearchError(f"source fetch refused for {candidate!r}: HTTPS is required")
+        if not hostname:
+            raise ResearchError(f"source fetch refused for {candidate!r}: no host")
+        if _is_blocked_host(hostname):
+            raise ResearchError(f"source fetch refused for {candidate!r}: host resolves to a loopback/private/link-local address")
+        netloc = (parts.netloc or "").split("@", 1)[-1]
+        return parts._replace(netloc=netloc).geturl()
+
     def _fetch_once(request_url: str) -> str:
-        """One attempt across all redirect hops. Returns the decoded body. Raises
-        :class:`ResearchError` on 4xx / redirect error / oversized / disallowed-type (fail
-        closed); re-raises raw ``HTTPError`` for HTTP 5xx so the bounded caller treats it
-        as a transient and retries once."""
+        """Fetch one source, validating every redirect destination before connecting."""
         raw = b""
         content_type = ""
-        for _hop in range(max_redirects + 1):
+        for hop in range(max_redirects + 1):
+            request_url = _validated_url(request_url)
             try:
                 raw, content_type = _do_request(request_url)
-            except urllib.error.HTTPError as exc:  # includes 3xx when not auto-followed
+            except urllib.error.HTTPError as exc:
                 if exc.code in (301, 302, 303, 307, 308) and exc.headers is not None:
                     location = exc.headers.get("Location")
                     if not location:
-                        raise ResearchError(
-                            "source redirected with no Location header"
-                        ) from exc
+                        raise ResearchError("source redirected with no Location header") from exc
+                    if hop >= max_redirects:
+                        raise ResearchError(f"source exceeded maximum of {max_redirects} redirects") from exc
                     request_url = urllib.parse.urljoin(exc.geturl(), location)
                     continue
                 if 500 <= exc.code < 600:
-                    raise  # transient server error -> bounded caller retries once (HTTPError is OSError)
+                    raise
                 raise ResearchError(f"source fetch failed: HTTP {exc.code}") from exc
             break
         if len(raw) > max_bytes:
@@ -503,29 +518,7 @@ def make_secure_http_transport(
             raise ResearchError(f"source could not be decoded as UTF-8: {exc}") from exc
 
     def _transport(url: str) -> str:
-        scheme = ""
-        try:
-            parts = urllib.parse.urlsplit(url)
-            scheme = (parts.scheme or "").lower()
-            hostname = (parts.hostname or "").lower()
-        except ValueError as exc:
-            raise ResearchError(f"invalid source URL {url!r}: {exc}") from exc
-
-        if scheme != "https":
-            raise ResearchError(
-                f"source fetch refused for {url!r}: only HTTPS is allowed (got {scheme or 'none'!r})"
-            )
-        if not hostname:
-            raise ResearchError(f"source fetch refused for {url!r}: no host")
-        if _is_blocked_host(hostname):
-            raise ResearchError(
-                f"source fetch refused for {url!r}: host resolves to a loopback/private/link-local address"
-            )
-
-        # Strip any userinfo so credentials are never forwarded.
-        safe_url = urllib.parse.urlsplit(url)
-        netloc = (safe_url.netloc or "").split("@", 1)[-1]
-        request_url = safe_url._replace(netloc=netloc).geturl()
+        request_url = _validated_url(url)
 
         # Bounded transient retry: each attempt is capped by a hard SIGALRM wall-clock
         # deadline. Transient failures (timeout/connection/5xx) retry up to max_attempts;

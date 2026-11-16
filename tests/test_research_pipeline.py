@@ -384,3 +384,69 @@ def test_verify_claims_requires_two_reliable_independent_domains():
     assert verify_claims(
         [same_publisher, unverified, mixed_quality, independent], []
     ) == [independent]
+
+
+def test_secure_transport_revalidates_redirect_destination(monkeypatch):
+    """A public source cannot redirect the fetcher into a private host."""
+    import email.message
+    import urllib.error
+    import urllib.request
+    from ai_video_factory import research_pipeline as research
+
+    calls = []
+    def fake_urlopen(request, timeout):
+        calls.append(request.full_url)
+        headers = email.message.Message()
+        headers["Location"] = "https://127.0.0.1/private"
+        raise urllib.error.HTTPError(request.full_url, 302, "Found", headers, None)
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(research, "_is_blocked_host", lambda hostname: hostname == "127.0.0.1")
+    transport = research.make_secure_http_transport()
+    with pytest.raises(ResearchError, match="loopback/private/link-local"):
+        transport("https://public.example/article")
+    assert calls == ["https://public.example/article"]
+
+
+def test_secure_transport_rejects_https_downgrade_redirect(monkeypatch):
+    """Redirects cannot downgrade a vetted HTTPS source to plain HTTP."""
+    import email.message
+    import urllib.error
+    import urllib.request
+    from ai_video_factory import research_pipeline as research
+
+    calls = []
+    def fake_urlopen(request, timeout):
+        calls.append(request.full_url)
+        headers = email.message.Message()
+        headers["Location"] = "http://public.example/insecure"
+        raise urllib.error.HTTPError(request.full_url, 302, "Found", headers, None)
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(research, "_is_blocked_host", lambda hostname: False)
+    transport = research.make_secure_http_transport()
+    with pytest.raises(ResearchError, match="HTTPS is required"):
+        transport("https://public.example/article")
+    assert calls == ["https://public.example/article"]
+
+
+def test_secure_transport_enforces_redirect_limit(monkeypatch):
+    """A redirect loop stops at the configured hop limit."""
+    import email.message
+    import urllib.error
+    import urllib.request
+    from ai_video_factory import research_pipeline as research
+
+    calls = []
+    def fake_urlopen(request, timeout):
+        calls.append(request.full_url)
+        headers = email.message.Message()
+        headers["Location"] = f"https://public.example/redirect-{len(calls)}"
+        raise urllib.error.HTTPError(request.full_url, 302, "Found", headers, None)
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(research, "_is_blocked_host", lambda hostname: False)
+    transport = research.make_secure_http_transport(max_redirects=2)
+    with pytest.raises(ResearchError, match="maximum of 2 redirects"):
+        transport("https://public.example/article")
+    assert len(calls) == 3
