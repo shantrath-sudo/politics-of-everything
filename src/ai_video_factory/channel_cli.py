@@ -335,16 +335,24 @@ def start_pilot() -> None:
                 raise typer.Exit(code=0)
 
         queries = list(config["research_queries"])
-        topic_terms = [term.lower() for term in config.get("topic_terms", [])]
+        core_terms = [term.lower() for term in config.get("core_topic_terms", [])]
+        mechanism_terms = [term.lower() for term in config.get("mechanism_terms", [])]
+        if not core_terms or not mechanism_terms:
+            raise ChannelWorkflowError(
+                "pilot configuration must define both core_topic_terms and mechanism_terms"
+            )
         discovery_diagnostics: dict[str, Any] = {}
         candidates = scout_topics(
             queries=queries, limit=60, diagnostics=discovery_diagnostics
         )
         failures = discovery_diagnostics.get("feed_failure_samples", [])
-        matched = [
-            item for item in candidates
-            if any(term in f"{item.title} {item.summary}".lower() for term in topic_terms)
-        ]
+        matched = []
+        for item in candidates:
+            searchable = f"{item.title} {item.summary}".lower()
+            has_core = any(term in searchable for term in core_terms)
+            has_mechanism = any(term in searchable for term in mechanism_terms)
+            if has_core and has_mechanism:
+                matched.append(item)
         urls_by_domain: dict[str, list[str]] = {}
         best = matched[0] if matched else None
         for item in matched:
