@@ -8,10 +8,17 @@ research_queries = [
   "India parliament courts election commission democratic institutions accountability",
   "political parties bureaucracy media citizens influence public policy democracy",
 ]
-topic_terms = [
-  "democracy", "democratic", "institution", "institutions", "power",
-  "lobby", "lobbying", "influence", "accountability", "parliament",
-  "court", "courts", "election", "governance", "political", "citizen",
+core_topic_terms = [
+  "democracy", "democratic", "election", "electoral", "parliament",
+  "legislature", "constitution", "constitutional", "judiciary", "judicial",
+  "court", "political party", "political parties", "campaign finance",
+  "lobbying", "government accountability", "public agency", "bureaucracy",
+]
+mechanism_terms = [
+  "accountability", "checks and balances", "representation", "representative",
+  "elected", "mp", "mps", "influence", "funding", "oversight", "public policy",
+  "citizen", "voter", "vote", "institution", "institutions", "campaign finance",
+  "lobbying", "money", "rights",
 ]
 max_sources = 8
 minimum_reliable_domains = 2
