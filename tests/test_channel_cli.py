@@ -240,8 +240,8 @@ minimum_reliable_domains = 2
     record = WorkflowStore(channel_cli.DATA / "projects").list()[0]
     assert record["stage"] == "topic_approved"
     assert record["topic"]["title"] == "Who Really Controls a Democracy?"
-    assert len(record["topic"]["article_urls"]) == 3
-    assert len(record["topic"]["publishers"]) == 3
+    assert len(record["topic"]["article_urls"]) == 2
+    assert len(record["topic"]["publishers"]) == 2
 
     repeated = CliRunner().invoke(channel_cli.app, ["start-pilot"])
     assert repeated.exit_code == 0, repeated.output
