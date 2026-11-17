@@ -1036,16 +1036,45 @@ def make_production_extractor(
 
         accepted: list[Extraction] | None = None
         last_error: Exception | None = None
-        for _attempt in range(max_attempts):
+        attempt_count = max(1, int(max_attempts))
+        extraction_started = time.monotonic()
+
+        def _post_completion() -> dict[str, Any]:
             try:
                 with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-                    result = json.loads(response.read().decode("utf-8"))
+                    payload_bytes = response.read()
             except _HTTPError as exc:
-                # 5xx is transient (server overload) -> retry; 4xx fails closed immediately.
+                # Preserve fail-closed handling for client errors. Server errors remain
+                # transient and are retried by the bounded transport wrapper below.
                 if 500 <= exc.code < 600:
-                    last_error = exc
-                    continue
+                    raise
                 raise ResearchError(f"model POST failed: HTTP {exc.code}") from exc
+            try:
+                payload_data = json.loads(payload_bytes.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise ResearchError("model POST returned invalid JSON") from exc
+            if not isinstance(payload_data, dict):
+                raise ResearchError("model POST returned an invalid response object")
+            return payload_data
+
+        for _attempt in range(attempt_count):
+            try:
+                # Enforce a true wall-clock cap around the entire model request. The
+                # urllib timeout alone only caps individual socket operations and can
+                # otherwise leave a source occupying the research run indefinitely.
+                result = _run_transient_bounded(
+                    _post_completion,
+                    deadline_seconds=timeout_seconds,
+                    max_attempts=1,
+                )
+            except _SourceDeadlineExhausted as exc:
+                last_error = exc
+                if _attempt + 1 >= attempt_count:
+                    exc.attempts = attempt_count
+                    exc.elapsed_seconds = round(time.monotonic() - extraction_started, 3)
+                    raise
+                continue
+
             content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
             try:
                 accepted = _parse(content)
@@ -1055,6 +1084,8 @@ def make_production_extractor(
                 last_error = exc
 
         if accepted is None:
+            if isinstance(last_error, _SourceDeadlineExhausted):
+                raise last_error
             raise last_error if last_error is not None else ResearchError(
                 "production extractor returned no claims with verbatim evidence"
             )
