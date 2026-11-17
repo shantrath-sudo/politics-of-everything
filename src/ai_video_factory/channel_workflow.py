@@ -365,15 +365,13 @@ def save_scout_report(
             f"- Feed requests failed: {diagnostics.get('feed_failures', 0)} of {diagnostics.get('queries_requested', 0)}",
             f"- Unique headline clusters: {diagnostics.get('clusters_before_ledger', 0)}",
             f"- Previously covered topics filtered: {diagnostics.get('duplicates_filtered', 0)}",
-            f"- Article URL resolution attempts: {diagnostics.get('resolver_attempts', 0)}",
-            f"- Article URL resolution failures: {diagnostics.get('resolver_failures', 0)}",
+            "- Article URL redirects resolved: 0 (direct publisher URLs are used)",
+            
             f"- Candidates with resolved publisher URLs: {diagnostics.get('resolved_candidates', 0)}",
             "",
         ])
         for failure in diagnostics.get("feed_failure_samples", []):
             lines.append(f"- Feed error: {failure}")
-        for failure in diagnostics.get("resolver_failure_samples", []):
-            lines.append(f"- URL resolution error: {failure}")
         lines.append("")
     if not candidates:
         lines.extend(["No candidates passed the current topic and source filters. See discovery diagnostics above for the stage that produced zero candidates.", ""])
