@@ -7,7 +7,7 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 1 | Audit source repository and dependencies | COMPLETE | Repository tree, source modules, test inventory and render report inspected |
 | 2 | Establish channel working repository | COMPLETE | Fork verified; write permission confirmed |
 | 3 | Channel configuration and editorial identity | COMPLETE | Channel config, editorial constitution, production plan and fixed decisions committed |
-| 4 | Daily topic discovery and scoring | COMPLETE (GitHub validation) | Live scout run 44088369719 succeeded on e6edf9a3; latest full channel test run 44088470166 succeeded on 3b877053 (all workflow steps passed). Live report: 149 headlines from 5 functioning feeds; GDELT returned HTTP 429 and Indian Express HTTP 403; 147 clusters, 30 shortlisted candidates. Sports false-positive regression test passes. Provider reliability remains an operational limitation, not a code-test failure |
+| 4 | Daily topic discovery and scoring | IN PROGRESS (provider resilience) | Live scout run 44088369719 succeeded on e6edf9a3; full channel test run 44088470166 succeeded on 3b877053. Live report: 149 headlines from 5 functioning feeds; GDELT returned HTTP 429 and Indian Express HTTP 403; 147 clusters, 30 shortlisted candidates. Indian Express has now been replaced by the official PIB Press Releases feed; the next live scout must validate that feed and the updated provider mix. |
 | 5 | Duplicate detection and topic ledger | COMPLETE | Covered-topic ledger checked during scouting; updated only after final approval |
 | 6 | Research dossier and source-quality rules | IN PROGRESS | HTTPS-only research transport validates every redirect destination, blocks private/loopback/link-local/reserved hosts, caps redirects/body size and enforces bounded request deadlines; real publisher fetch/extraction still needs Mac smoke test |
 | 7 | Claim ledger and corroboration | IN PROGRESS | Source, claim, contradiction and verified-fact artifacts integrated; verbatim evidence grounding and two independent reliable publisher domains required for promotion; real dossier not yet generated |
@@ -73,4 +73,12 @@ This CI verifies repository code on GitHub's Linux runner; it does not prove a l
 - Added per-provider headline counts so future reports identify which feeds contribute results, rather than only showing a combined total. Latest verified counts: The Hindu 60, Guardian World 45, BBC India 23, NPR 10 and Business Standard 11.
 - Added a conservative ranking penalty for obvious lifestyle/sports/celebrity signals only when a headline has no substantive political or institutional signal. This is a ranking adjustment, not an automatic rejection; editorial review remains mandatory.
 - Regression tests cover political-story ranking ahead of sports/lifestyle noise and provider-level diagnostics.
-- The latest live shortlist confirms the ranking correction: the basketball noise story moved to rank 20 after the generic `state` and `law` false-positive terms were removed. The full test suite now includes the regression case and passes. GDELT retry/backoff is implemented and tested, but a live HTTP 429 still prevented GDELT contribution in this run; alternative feed selection remains open.
+- The latest live shortlist confirms the ranking correction: the basketball noise story moved to rank 20 after the generic `state` and `law` false-positive terms were removed. The full test suite now includes the regression case and passes. GDELT retry/backoff is implemented and tested, but a live HTTP 429 still prevented GDELT contribution in this run.
+
+## Primary-source discovery fallback (2026-11-17)
+
+- Removed the Indian Express RSS endpoint from the scout after the live GitHub runner received HTTP 403.
+- Added the official Press Information Bureau (Government of India) Press Releases RSS endpoint as a primary-source discovery input. The official PIB RSS index lists this feed: https://www.pib.gov.in/ViewRss.aspx?lang=1&reg=1.
+- PIB releases are government-originated leads, not independent journalism. The discovery source-diversity score explicitly excludes PIB so its presence cannot inflate the independent-publisher signal.
+- Regression tests assert the new feed is requested, the blocked Indian Express endpoint is absent, and PIB does not count as an independent publisher.
+- Pending: validate the updated provider mix in the next live scout run. GDELT HTTP 429 remains a known reliability issue; RSS fallback remains functional.
