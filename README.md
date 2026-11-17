@@ -20,7 +20,7 @@ Read CHANNEL.md, EDITORIAL_CONSTITUTION.md, PRODUCTION_PLAN.md, and docs/DECISIO
 
 ### Local topic scouting and editorial state
 
-The politics-channel command searches public Google News RSS feeds in India, UK and US editions across the channel's five fixed research themes. It clusters related headlines, resolves publisher URLs and scores candidates. It requires no API key and makes no paid API calls.
+The politics-channel command uses one free GDELT DOC ArticleList search over a 24-hour window, combined with direct RSS feeds from BBC India, The Hindu, Indian Express, Business Standard, The Guardian World and NPR. It validates direct HTTPS publisher links, clusters related headlines and scores candidates. It requires no API key and makes no paid API calls.
 
     politics-channel start-pilot
     politics-channel scout
@@ -76,7 +76,7 @@ The Mac must be awake and the user session available for local work. Logs are wr
 
 ### Production engine
 
-The existing research pipeline, Remotion, FFmpeg, narration and quality-control components are retained. Google News RSS redirect links are resolved to publisher HTTPS article URLs before research. The research stage requires at least two distinct publisher domains and writes source, claim, contradiction and verified-fact records. The long-form script engine and format presets are configured for 10–15 minute documentaries. Local inference defaults are sized more conservatively for a 16 GB Apple Silicon Mac; the selected model still needs to be installed and smoke-tested locally.
+The existing research pipeline, Remotion, FFmpeg, narration and quality-control components are retained. GDELT and publisher RSS are discovery inputs only; they do not establish factual accuracy. The research stage independently fetches and extracts publisher source text, requires at least two distinct publisher domains, and writes source, claim, contradiction and verified-fact records. The long-form script engine and format presets are configured for 10–15 minute documentaries. Local inference and Kokoro narration have been installed and smoke-tested on the configured Mac.
 
 ## Safety
 
