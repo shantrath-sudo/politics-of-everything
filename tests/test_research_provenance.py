@@ -20,6 +20,7 @@ import pytest
 from ai_video_factory.research_pipeline import (
     ModelResolutionError,
     ResearchError,
+    _SourceDeadlineExhausted,
     ResearchResult,
     SourceContent,
     EvidenceRecord,
@@ -419,3 +420,32 @@ def test_run_research_legacy_mode_has_no_model_provenance():
         extractor=RULE_BASED_EXTRACTOR,
     )
     assert result.extractor_model_id is None
+
+
+def test_production_extractor_enforces_wall_clock_deadline(monkeypatch):
+    """A stalled local model request is interrupted by the configured hard deadline."""
+    import time
+    from ai_video_factory import research_pipeline as research
+
+    _install_fake_urllib(monkeypatch, "")
+    monkeypatch.setattr(research, "_lmstudio_models_bytes", lambda url: _MODELS_BYTES)
+    request_mod = sys.modules["urllib.request"]
+    calls = {"n": 0}
+
+    def slow_urlopen(*args, **kwargs):
+        calls["n"] += 1
+        time.sleep(0.1)
+        raise AssertionError("deadline should interrupt the stalled request")
+
+    monkeypatch.setattr(request_mod, "urlopen", slow_urlopen)
+    extractor = make_production_extractor(
+        endpoint_url="http://127.0.0.1:9/v1/chat/completions",
+        model_name="m-a",
+        timeout_seconds=0.01,
+        max_attempts=1,
+    )
+
+    with pytest.raises(_SourceDeadlineExhausted, match="per-attempt budget"):
+        extractor("Water Beyond Earth", [_source("NASA carried water on Mars in 2021.")])
+    assert calls["n"] == 1
+
