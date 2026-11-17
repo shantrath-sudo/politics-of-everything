@@ -231,6 +231,33 @@ def test_run_research_drops_extraction_grounding_failure(tmp_path: Path) -> None
     assert len(result.claims) == 1
 
 
+
+def test_all_droppable_extraction_failures_report_each_source_reason() -> None:
+    """When every source is dropped, the aggregate error preserves each cause."""
+    source_a = "https://example.org/source-a"
+    source_b = "https://example.net/source-b"
+
+    def fetcher(url: str) -> bytes:
+        return b"This source contains enough text to pass the minimum content length."
+
+    def extractor(topic: str, src: list, identity=None):
+        raise ResearchError("deterministic fallback found no distinct grounded facts")
+
+    with pytest.raises(ResearchError) as exc:
+        run_research(
+            "A factual documentary topic",
+            [source_a, source_b],
+            content_fetcher=fetcher,
+            production_extractor=extractor,  # type: ignore[arg-type]
+            droppable_urls=frozenset({source_a, source_b}),
+        )
+
+    message = str(exc.value)
+    assert source_a in message
+    assert source_b in message
+    assert "no distinct grounded facts" in message
+
+
 def test_run_research_fails_closed_on_non_droppable_grounding(tmp_path: Path) -> None:
     """A non-droppable source whose extractor yields no verbatim-grounded claim fails
     the whole run (ungrounded output never becomes verified facts)."""
