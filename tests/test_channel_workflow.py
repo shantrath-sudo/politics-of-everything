@@ -124,13 +124,12 @@ def test_workflow_requires_final_video_before_final_approval(tmp_path):
     assert record["approvals"] == {"topic": True, "script": True, "final": True}
 
 
-def test_article_resolver_rejects_non_https_links_without_network():
-    from ai_video_factory.channel_workflow import ChannelWorkflowError, _resolve_article_url
+def test_discovery_rejects_non_https_and_credentialed_article_links():
+    from ai_video_factory.channel_workflow import _valid_publisher_url
 
-    with pytest.raises(ChannelWorkflowError, match="HTTPS"):
-        _resolve_article_url("http://example.com/story")
-    with pytest.raises(ChannelWorkflowError, match="HTTPS"):
-        _resolve_article_url("https://user:password@example.com/story")
+    assert not _valid_publisher_url("http://example.com/story")
+    assert not _valid_publisher_url("https://user:password@example.com/story")
+    assert _valid_publisher_url("https://publisher.example/story")
 
 
 
