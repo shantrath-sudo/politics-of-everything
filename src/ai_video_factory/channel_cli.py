@@ -355,6 +355,18 @@ def start_pilot() -> None:
                 matched.append(item)
         urls_by_domain: dict[str, list[str]] = {}
         best = matched[0] if matched else None
+        # The first pilot is an evergreen explainer, so seed it with manually
+        # curated institutional and research sources. Live news leads are
+        # supplementary and must still pass the topic relevance filter above.
+        for url in config.get("seed_source_urls", []):
+            if classify_source_quality(url) != "reliable":
+                continue
+            domain = _publisher_domain(url)
+            if not domain:
+                continue
+            bucket = urls_by_domain.setdefault(domain, [])
+            if url not in bucket:
+                bucket.append(url)
         for item in matched:
             for url in item.article_urls or [item.url]:
                 if classify_source_quality(url) != "reliable":
