@@ -1,0 +1,43 @@
+name: Live topic scout validation
+
+on:
+  push:
+    branches:
+      - channel/bootstrap
+    paths:
+      - .github/workflows/live-scout.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-topic-scout
+  cancel-in-progress: false
+
+jobs:
+  live-scout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out channel
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install channel runtime
+        run: uv sync --no-dev
+      - name: Run live topic discovery
+        run: uv run politics-channel scout --limit 30
+      - name: Upload live scout report
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-topic-scout-report
+          path: |
+            data/channel/scouting/*.json
+            data/channel/scouting/*.md
+          if-no-files-found: error
+          retention-days: 14
