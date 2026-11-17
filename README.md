@@ -92,3 +92,8 @@ The existing research pipeline, Remotion, FFmpeg, narration and quality-control 
 Requires Python 3.12 and the project's existing uv/FFmpeg/Remotion prerequisites. The repository CI runs the channel-critical tests on pushes to channel/bootstrap.
 
 See docs/LOCAL_SETUP.md for the one-time Mac setup, model and TTS installation, and launchd activation. See docs/IMPLEMENTATION_TRACKER.md for verified progress and outstanding work.
+
+
+### Topic discovery sources
+
+Topic scouting uses the free GDELT DOC API (24-hour ArticleList search) and direct publisher RSS feeds. Google News RSS and Google News redirect resolution are not used. GDELT is a discovery index, not a verification source; all reporting still passes through the channel's existing research and editorial approval workflow. GDELT project: https://www.gdeltproject.org/.
