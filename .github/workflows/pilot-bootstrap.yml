@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: pilot-bootstrap
+  group: pilot-bootstrap-v2
   cancel-in-progress: false
 
 jobs:
