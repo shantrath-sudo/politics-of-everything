@@ -180,7 +180,11 @@ def _score_candidate(candidate: TopicCandidate, now: datetime) -> None:
     # Penalise obvious lifestyle/sports/celebrity noise only when the story
     # lacks a substantive political or institutional dimension. This is a
     # ranking signal, never an automatic editorial rejection.
-    relevance_penalty = 2.0 if weak_hits and strong_hits == 0 else 0.0
+    # A single generic token (for example, "state" in "state of Georgia"
+    # or "minister" in a travel-event brief) is not enough to establish a
+    # substantive political angle. Require at least two distinct political
+    # signals before exempting a sports/lifestyle lead from the noise penalty.
+    relevance_penalty = 2.0 if weak_hits and strong_hits < 2 else 0.0
     # A transparent discovery priority score, not a factual-confidence score.
     candidate.score = round(max(0.0,
         candidate.topic_fit * 0.30
