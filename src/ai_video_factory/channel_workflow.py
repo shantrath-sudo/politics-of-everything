@@ -37,8 +37,8 @@ STOP_WORDS = {
     "were", "after", "before", "over", "new", "says", "say",
 }
 FIT_TERMS = {
-    "democracy", "government", "politics", "political", "power", "state",
-    "constitution", "election", "parliament", "court", "policy", "law",
+    "democracy", "government", "politics", "political", "power",
+    "constitution", "election", "parliament", "court", "policy",
     "institution", "governance", "economy", "economic", "trade", "debt",
     "inequality", "labour", "labor", "market", "capital", "geopolitics",
     "war", "diplomacy", "china", "india", "united", "nations", "technology",
