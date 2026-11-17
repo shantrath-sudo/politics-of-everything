@@ -172,3 +172,101 @@ def test_scout_reports_feed_and_article_resolution_diagnostics():
     assert diagnostics["resolved_candidates"] == 0
     assert diagnostics["resolver_failure_samples"]
 
+
+
+
+def test_article_resolver_retries_rate_limit_then_returns_publisher_url(monkeypatch):
+    from email.message import Message
+    from urllib.error import HTTPError
+    import ai_video_factory.channel_workflow as workflow
+
+    calls = []
+    sleeps = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def geturl(self):
+            return "https://publisher.example/story"
+
+    class Opener:
+        def open(self, _request, timeout):
+            calls.append(timeout)
+            if len(calls) == 1:
+                headers = Message()
+                headers["Retry-After"] = "0"
+                raise HTTPError("https://news.google.com/rss/articles/x", 429, "Too Many Requests", headers, None)
+            return Response()
+
+    monkeypatch.setattr(workflow, "build_opener", lambda *_args: Opener())
+    monkeypatch.setattr(workflow.time, "sleep", sleeps.append)
+
+    assert workflow._resolve_article_url("https://news.google.com/rss/articles/x") == "https://publisher.example/story"
+    assert len(calls) == 2
+    assert sleeps == [0.0]
+
+
+def test_article_resolver_stops_after_bounded_rate_limit_retries(monkeypatch):
+    from urllib.error import HTTPError
+    import ai_video_factory.channel_workflow as workflow
+
+    calls = []
+
+    class Opener:
+        def open(self, _request, timeout):
+            calls.append(timeout)
+            raise HTTPError("https://news.google.com/rss/articles/x", 429, "Too Many Requests", {}, None)
+
+    monkeypatch.setattr(workflow, "build_opener", lambda *_args: Opener())
+    monkeypatch.setattr(workflow.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(workflow.ArticleResolutionRateLimited):
+        workflow._resolve_article_url("https://news.google.com/rss/articles/x")
+    assert len(calls) == 3
+
+
+def test_scout_stops_resolving_after_google_news_rate_limit():
+    from ai_video_factory.channel_workflow import ArticleResolutionRateLimited
+
+    calls = []
+
+    def rate_limited(url):
+        calls.append(url)
+        raise ArticleResolutionRateLimited("rate limit persisted")
+
+    diagnostics = {}
+    candidates = scout_topics(
+        queries=["democracy"],
+        transport=lambda _url: RSS,
+        now=datetime(2026, 11, 15, 12, tzinfo=UTC),
+        resolver=rate_limited,
+        diagnostics=diagnostics,
+    )
+
+    assert candidates == []
+    assert len(calls) == 1
+    assert diagnostics["resolver_attempts"] == 1
+    assert diagnostics["resolution_stopped_for_rate_limit"] is True
+
+
+def test_scout_respects_global_article_resolution_attempt_limit():
+    diagnostics = {}
+    calls = []
+
+    candidates = scout_topics(
+        queries=["democracy"],
+        transport=lambda _url: RSS,
+        now=datetime(2026, 11, 15, 12, tzinfo=UTC),
+        resolver=lambda url: calls.append(url) or url,
+        diagnostics=diagnostics,
+        max_resolution_attempts=1,
+    )
+
+    assert len(calls) == 1
+    assert len(candidates) == 1
+    assert diagnostics["resolver_attempts"] == 1
+    assert diagnostics["resolution_attempt_limit_reached"] is True
