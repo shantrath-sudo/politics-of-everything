@@ -961,7 +961,7 @@ def make_production_extractor(
 
         payload = json.dumps({
             "model": resolved_model_name,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [{"role": "user", "content": "/no_think\n" + prompt}],
             "max_tokens": 1500,
             "temperature": 0.0,
             "stream": False,
