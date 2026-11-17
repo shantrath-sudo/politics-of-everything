@@ -1072,7 +1072,7 @@ def make_production_extractor(
                 if _attempt + 1 >= attempt_count:
                     exc.attempts = attempt_count
                     exc.elapsed_seconds = round(time.monotonic() - extraction_started, 3)
-                    raise
+                    break
                 continue
 
             content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
@@ -1084,11 +1084,24 @@ def make_production_extractor(
                 last_error = exc
 
         if accepted is None:
-            if isinstance(last_error, _SourceDeadlineExhausted):
-                raise last_error
-            raise last_error if last_error is not None else ResearchError(
-                "production extractor returned no claims with verbatim evidence"
-            )
+            # The model is an assistive extractor, not a single point of failure.
+            # Fall back to verbatim source sentences only: no generated/paraphrased
+            # claims are introduced. The normal grounding gate and independent-source
+            # corroboration rules still apply downstream. Identity is deliberately
+            # stamped as deterministic-production so provenance never implies the
+            # local model supplied these claims.
+            try:
+                fallback = make_deterministic_production_extractor(
+                    extractor_name="deterministic-grounded-fallback",
+                    extractor_version="1.0",
+                    prompt_version=prompt_version,
+                    extraction_schema_version=extraction_schema_version,
+                )
+                return fallback(topic, sources, identity=identity)
+            except ResearchError:
+                raise last_error if last_error is not None else ResearchError(
+                    "production extractor returned no claims with verbatim evidence"
+                )
 
         if identity is not None:
             identity(
