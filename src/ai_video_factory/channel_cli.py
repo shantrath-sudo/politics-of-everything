@@ -338,7 +338,7 @@ def start_pilot() -> None:
         topic_terms = [term.lower() for term in config.get("topic_terms", [])]
         discovery_diagnostics: dict[str, Any] = {}
         candidates = scout_topics(
-            queries=queries, limit=12, diagnostics=discovery_diagnostics
+            queries=queries, limit=60, diagnostics=discovery_diagnostics
         )
         failures = discovery_diagnostics.get("feed_failure_samples", [])
         matched = [
