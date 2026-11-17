@@ -71,7 +71,8 @@ class ChannelWorkflowError(RuntimeError):
 DEFAULT_PUBLISHER_FEEDS = (
     ("BBC India", "https://feeds.bbci.co.uk/news/world/asia/india/rss.xml"),
     ("The Hindu", "https://www.thehindu.com/feeder/default.rss"),
-    ("Indian Express", "https://indianexpress.com/feed/"),
+    # Primary government releases are discovery leads, not independent journalism.
+    ("PIB (Government of India)", "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1"),
     ("Business Standard", "https://www.business-standard.com/rss/home_page_top_stories.rss"),
     ("Guardian World", "https://www.theguardian.com/world/rss"),
     ("NPR", "https://feeds.npr.org/1001/rss.xml"),
@@ -174,7 +175,8 @@ def _score_candidate(candidate: TopicCandidate, now: datetime) -> None:
     candidate.india_relevance = min(5.0, india_hits * 1.5)
     candidate.international_relevance = min(5.0, global_hits * 1.25)
     candidate.recency = _recency_score(candidate.published_at, now)
-    candidate.source_diversity = min(5.0, float(len(set(candidate.publishers))) * 1.5)
+    independent_publishers = set(candidate.publishers) - {"PIB (Government of India)"}
+    candidate.source_diversity = min(5.0, float(len(independent_publishers)) * 1.5)
     strong_hits = len(tokens & STRONG_POLITICAL_TERMS)
     weak_hits = len(tokens & LOW_EDITORIAL_SIGNAL_TERMS)
     # Penalise obvious lifestyle/sports/celebrity noise only when the story
