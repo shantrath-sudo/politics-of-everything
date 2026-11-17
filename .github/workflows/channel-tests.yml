@@ -4,10 +4,26 @@ on:
   push:
     branches:
       - channel/bootstrap
+    paths:
+      - .github/workflows/channel-tests.yml
+      - pyproject.toml
+      - uv.lock
+      - config/**
+      - scripts/**
+      - src/**
+      - tests/**
   pull_request:
     branches:
       - main
       - channel/bootstrap
+    paths:
+      - .github/workflows/channel-tests.yml
+      - pyproject.toml
+      - uv.lock
+      - config/**
+      - scripts/**
+      - src/**
+      - tests/**
   workflow_dispatch:
 
 permissions:
