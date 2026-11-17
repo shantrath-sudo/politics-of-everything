@@ -44,7 +44,7 @@ def test_scout_clusters_related_headlines_and_scores_sources():
     candidate = candidates[0]
     assert candidate.title.startswith("Who controls democracy")
     assert len(candidate.publishers) == 2
-    assert candidate.source_diversity == 3.0
+    assert candidate.source_diversity == 5.0
     assert 0 <= candidate.score <= 5
 
 
@@ -144,9 +144,9 @@ def test_scout_queries_both_india_and_international_editions():
         resolver=lambda url: url,
     )
     assert candidates
-    assert any("hl=en-IN" in url and "gl=IN" in url for url in requested)
-    assert any("hl=en-GB" in url and "gl=GB" in url for url in requested)
-    assert any("hl=en-US" in url and "gl=US" in url for url in requested)
+    assert any("api.gdeltproject.org/api/v2/doc/doc" in url for url in requested)
+    assert any("feeds.bbci.co.uk" in url for url in requested)
+    assert not any("news.google.com" in url for url in requested)
 
 def test_scout_reports_feed_and_article_resolution_diagnostics():
     diagnostics = {}
@@ -164,109 +164,76 @@ def test_scout_reports_feed_and_article_resolution_diagnostics():
     )
 
     assert candidates == []
-    assert diagnostics["rss_headlines"] == 6
+    assert diagnostics["rss_headlines"] == 12
     assert diagnostics["clusters_before_ledger"] == 1
     assert diagnostics["clusters_after_ledger"] == 1
-    assert diagnostics["resolver_attempts"] == 2
-    assert diagnostics["resolver_failures"] == 2
+    assert diagnostics["resolver_attempts"] == 0
+    assert diagnostics["resolver_failures"] == 0
     assert diagnostics["resolved_candidates"] == 0
-    assert diagnostics["resolver_failure_samples"]
+    assert diagnostics["resolver_failure_samples"] == []
 
 
 
 
-def test_article_resolver_retries_rate_limit_then_returns_publisher_url(monkeypatch):
-    from email.message import Message
-    from urllib.error import HTTPError
+
+def test_gdelt_doc_parses_direct_article_urls_and_24_hour_window(monkeypatch):
+    import json
+    import urllib.parse
     import ai_video_factory.channel_workflow as workflow
 
-    calls = []
-    sleeps = []
+    monkeypatch.setattr(workflow, "DEFAULT_PUBLISHER_FEEDS", ())
+    requested = []
+    payload = {"articles": [{
+        "title": "Democracy institutions and political power",
+        "url": "https://publisher.example/story",
+        "seendate": "20261117103000",
+        "domain": "publisher.example",
+    }]}
+    def transport(url):
+        requested.append(url)
+        return json.dumps(payload)
 
-    class Response:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *_args):
-            return False
-
-        def geturl(self):
-            return "https://publisher.example/story"
-
-    class Opener:
-        def open(self, _request, timeout):
-            calls.append(timeout)
-            if len(calls) == 1:
-                headers = Message()
-                headers["Retry-After"] = "0"
-                raise HTTPError("https://news.google.com/rss/articles/x", 429, "Too Many Requests", headers, None)
-            return Response()
-
-    monkeypatch.setattr(workflow, "build_opener", lambda *_args: Opener())
-    monkeypatch.setattr(workflow.time, "sleep", sleeps.append)
-
-    assert workflow._resolve_article_url("https://news.google.com/rss/articles/x") == "https://publisher.example/story"
-    assert len(calls) == 2
-    assert sleeps == [0.0]
-
-
-def test_article_resolver_stops_after_bounded_rate_limit_retries(monkeypatch):
-    from urllib.error import HTTPError
-    import ai_video_factory.channel_workflow as workflow
-
-    calls = []
-
-    class Opener:
-        def open(self, _request, timeout):
-            calls.append(timeout)
-            raise HTTPError("https://news.google.com/rss/articles/x", 429, "Too Many Requests", {}, None)
-
-    monkeypatch.setattr(workflow, "build_opener", lambda *_args: Opener())
-    monkeypatch.setattr(workflow.time, "sleep", lambda _seconds: None)
-
-    with pytest.raises(workflow.ArticleResolutionRateLimited):
-        workflow._resolve_article_url("https://news.google.com/rss/articles/x")
-    assert len(calls) == 3
-
-
-def test_scout_stops_resolving_after_google_news_rate_limit():
-    from ai_video_factory.channel_workflow import ArticleResolutionRateLimited
-
-    calls = []
-
-    def rate_limited(url):
-        calls.append(url)
-        raise ArticleResolutionRateLimited("rate limit persisted")
-
-    diagnostics = {}
-    candidates = scout_topics(
-        queries=["democracy"],
-        transport=lambda _url: RSS,
-        now=datetime(2026, 11, 15, 12, tzinfo=UTC),
-        resolver=rate_limited,
-        diagnostics=diagnostics,
-    )
-
-    assert candidates == []
-    assert len(calls) == 1
-    assert diagnostics["resolver_attempts"] == 1
-    assert diagnostics["resolution_stopped_for_rate_limit"] is True
-
-
-def test_scout_respects_global_article_resolution_attempt_limit():
-    diagnostics = {}
-    calls = []
-
-    candidates = scout_topics(
-        queries=["democracy"],
-        transport=lambda _url: RSS,
-        now=datetime(2026, 11, 15, 12, tzinfo=UTC),
-        resolver=lambda url: calls.append(url) or url,
-        diagnostics=diagnostics,
-        max_resolution_attempts=1,
-    )
-
-    assert len(calls) == 1
+    candidates = workflow.scout_topics(queries=["democracy power"], transport=transport)
     assert len(candidates) == 1
-    assert diagnostics["resolver_attempts"] == 1
-    assert diagnostics["resolution_attempt_limit_reached"] is True
+    assert candidates[0].url == "https://publisher.example/story"
+    params = urllib.parse.parse_qs(urllib.parse.urlsplit(requested[0]).query)
+    assert params["timespan"] == ["24h"]
+    assert params["format"] == ["json"]
+    assert params["mode"] == ["ArtList"]
+
+
+def test_gdelt_rejects_non_https_and_private_article_urls(monkeypatch):
+    import json
+    import ai_video_factory.channel_workflow as workflow
+
+    monkeypatch.setattr(workflow, "DEFAULT_PUBLISHER_FEEDS", ())
+    payload = {"articles": [
+        {"title": "Democracy power institutions", "url": "http://publisher.example/story"},
+        {"title": "Democracy power institutions", "url": "https://127.0.0.1/private"},
+    ]}
+    candidates = workflow.scout_topics(
+        queries=["democracy"], transport=lambda _url: json.dumps(payload)
+    )
+    assert candidates == []
+
+
+def test_publisher_rss_is_used_when_gdelt_fails(monkeypatch):
+    import ai_video_factory.channel_workflow as workflow
+
+    monkeypatch.setattr(
+        workflow, "DEFAULT_PUBLISHER_FEEDS",
+        (("Publisher One", "https://publisher.example/rss"),),
+    )
+    diagnostics = {}
+    def transport(url):
+        if "publisher.example/rss" in url:
+            return RSS
+        raise TimeoutError("GDELT offline")
+
+    candidates = workflow.scout_topics(
+        queries=["democracy"], transport=transport, diagnostics=diagnostics
+    )
+    assert candidates
+    assert candidates[0].publishers == ["Publisher One"]
+    assert diagnostics["feed_failures"] == 1
+    assert diagnostics["providers"] == ["GDELT DOC", "direct publisher RSS"]
