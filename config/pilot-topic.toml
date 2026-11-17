@@ -26,6 +26,9 @@ minimum_reliable_domains = 2
 seed_source_urls = [
   "https://freedomhouse.org/country/india/freedom-world/2026",
   "https://www.idea.int/publications/catalogue/html/citizen-monitoring-political-and-campaign-finance-asia-framework-action",
-  "https://prsindia.org/files/parliament/discussion_papers/1417667860--Parliamentary%20Oversight%20of%20the%20Executive.pdf",
+  "https://prsindia.org/articles-by-prs-team/making-legislative-scrutiny-rigorous-and-process-driven",
   "https://indianexpress.com/article/upsc-current-affairs/upsc-essentials/parliamentary-oversight-strengthens-transparent-and-responsive-governance-10860593/",
+  "https://sansad.in/ls/committee/introduction",
+  "https://www.eci.gov.in/expenditure-monitoring",
+  "https://www.eci.gov.in/contribution-reports",
 ]
