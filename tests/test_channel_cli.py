@@ -195,7 +195,7 @@ def test_start_pilot_creates_preapproved_project_from_reliable_sources(tmp_path,
 candidate_id = "pilot-democracy"
 summary = "An evidence-led documentary about democratic power."
 research_queries = ["democracy institutions", "India parliament accountability"]
-topic_terms = ["democracy", "parliament", "power"]
+core_topic_terms = ["democracy", "parliament"]\nmechanism_terms = ["accountability", "power"]
 max_sources = 6
 minimum_reliable_domains = 2
 """)
