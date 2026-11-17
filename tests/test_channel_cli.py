@@ -263,5 +263,5 @@ def test_pilot_research_seeds_are_text_extractable_and_reliable():
     from ai_video_factory.research_pipeline import classify_source_quality
 
     assert all(classify_source_quality(url) == "reliable" for url in urls)
-    assert any("sansad.in/" in url for url in urls)
-    assert any("eci.gov.in/" in url for url in urls)
+    assert sum("sansad.in/" in url for url in urls) >= 2
+    assert any("overseeing-public-funds" in url for url in urls)
