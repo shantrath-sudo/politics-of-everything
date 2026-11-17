@@ -29,6 +29,6 @@ seed_source_urls = [
   "https://prsindia.org/articles-by-prs-team/making-legislative-scrutiny-rigorous-and-process-driven",
   "https://indianexpress.com/article/upsc-current-affairs/upsc-essentials/parliamentary-oversight-strengthens-transparent-and-responsive-governance-10860593/",
   "https://sansad.in/ls/committee/introduction",
-  "https://www.eci.gov.in/expenditure-monitoring",
-  "https://www.eci.gov.in/contribution-reports",
+  "https://sansad.in/rs/committees/introduction",
+  "https://prsindia.org/budgets/discussionpapers/overseeing-public-funds-how-to-scrutinise-budgets",
 ]
