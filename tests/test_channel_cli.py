@@ -1,4 +1,5 @@
 import json
+import tomllib
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -246,3 +247,21 @@ minimum_reliable_domains = 2
     repeated = CliRunner().invoke(channel_cli.app, ["start-pilot"])
     assert repeated.exit_code == 0, repeated.output
     assert "already exists" in repeated.output
+
+
+
+def test_pilot_research_seeds_are_text_extractable_and_reliable():
+    config_path = Path(channel_cli.ROOT) / "config" / "pilot-topic.toml"
+    config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    urls = config["seed_source_urls"]
+
+    # The secure research fetcher intentionally rejects binary PDFs; every seed
+    # must therefore be an extractable HTML/text source.
+    assert len(urls) >= 6
+    assert all(not url.lower().split("?", 1)[0].endswith(".pdf") for url in urls)
+
+    from ai_video_factory.research_pipeline import classify_source_quality
+
+    assert all(classify_source_quality(url) == "reliable" for url in urls)
+    assert any("sansad.in/" in url for url in urls)
+    assert any("eci.gov.in/" in url for url in urls)
