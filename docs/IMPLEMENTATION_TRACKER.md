@@ -7,7 +7,7 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 1 | Audit source repository and dependencies | COMPLETE | Repository tree, source modules, test inventory and render report inspected |
 | 2 | Establish channel working repository | COMPLETE | Fork verified; write permission confirmed |
 | 3 | Channel configuration and editorial identity | COMPLETE | Channel config, editorial constitution, production plan and fixed decisions committed |
-| 4 | Daily topic discovery and scoring | COMPLETE | Query-based Google News RSS scouting across India, UK and US editions, topic scoring, clustering, publisher URL resolution and CI tests |
+| 4 | Daily topic discovery and scoring | COMPLETE | GDELT DOC 24-hour topic search plus direct India/international publisher RSS, topic scoring, clustering and CI tests; no GDELT redirects |
 | 5 | Duplicate detection and topic ledger | COMPLETE | Covered-topic ledger checked during scouting; updated only after final approval |
 | 6 | Research dossier and source-quality rules | IN PROGRESS | HTTPS-only research transport validates every redirect destination, blocks private/loopback/link-local/reserved hosts, caps redirects/body size and enforces bounded request deadlines; real publisher fetch/extraction still needs Mac smoke test |
 | 7 | Claim ledger and corroboration | IN PROGRESS | Source, claim, contradiction and verified-fact artifacts integrated; verbatim evidence grounding and two independent reliable publisher domains required for promotion; real dossier not yet generated |
@@ -52,3 +52,13 @@ This CI verifies repository code on GitHub's Linux runner; it does not prove a l
 - Publishing: OFF
 - Paid APIs/services: OFF pending explicit approval
 - LTX-2 / large video models: DO NOT INSTALL
+
+
+## Topic discovery provider switch (2026-11-17)
+
+- Google News RSS and its redirect-resolution dependency have been removed from the scouting path.
+- Primary discovery: one GDELT DOC ArticleList JSON request per scout, using a 24-hour search window and the channel's combined topic vocabulary.
+- Independent fallback/breadth: direct RSS feeds from BBC India, The Hindu, Indian Express, Business Standard, The Guardian World and NPR.
+- All candidate links must be credential-free HTTPS URLs and pass the existing blocked/private-host check before entering the shortlist.
+- GDELT and publisher feeds are discovery inputs only. The separate research pipeline remains responsible for fetching, extracting, corroborating and verifying claims.
+- GDELT attribution: https://www.gdeltproject.org/ . No API key, paid API or BigQuery dependency is introduced.
