@@ -1,0 +1,45 @@
+name: Bootstrap approved documentary pilot
+
+on:
+  push:
+    branches:
+      - channel/bootstrap
+    paths:
+      - .github/workflows/pilot-bootstrap.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilot-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out channel
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install channel runtime
+        run: uv sync --no-dev
+      - name: Create approved pilot project from live publisher discovery
+        run: uv run politics-channel start-pilot
+      - name: Record pilot project status
+        run: uv run politics-channel status
+      - name: Upload pilot project and discovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: democracy-pilot-bootstrap
+          path: |
+            data/channel/projects/**
+            data/channel/scouting/**
+          if-no-files-found: error
+          retention-days: 30
