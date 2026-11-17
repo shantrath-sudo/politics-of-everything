@@ -1555,6 +1555,7 @@ def extract_from_source_content(
     # film.
     retained: list[SourceContent] = []
     dropped_seen: set[str] = set()
+    drop_reasons: list[str] = []
     for sc in sources:
         try:
             chunk = _clean_excerpt(sc.content, topic)
@@ -1614,6 +1615,7 @@ def extract_from_source_content(
             if sc.url not in droppable_urls or sc.url in dropped_seen:
                 raise
             dropped_seen.add(sc.url)
+            drop_reasons.append(f"{sc.url}: {str(exc)[:300]}")
             if drops is not None:
                 drops.append(SourceDrop(
                     url=sc.url,
@@ -1633,6 +1635,7 @@ def extract_from_source_content(
             if sc.url not in droppable_urls or sc.url in dropped_seen:
                 raise
             dropped_seen.add(sc.url)
+            drop_reasons.append(f"{sc.url}: {str(exc)[:300]}")
             if drops is not None:
                 drops.append(SourceDrop(
                     url=sc.url,
@@ -1645,9 +1648,10 @@ def extract_from_source_content(
             continue
 
     if not records:
+        detail = "; ".join(drop_reasons) if drop_reasons else "no source produced an extraction"
         raise ResearchError(
             "production extractor returned no claims across all sources; "
-            "insufficient supported material"
+            "insufficient supported material. Per-source diagnostics: " + detail
         )
 
     claims = _build_claims_from_records(records)
