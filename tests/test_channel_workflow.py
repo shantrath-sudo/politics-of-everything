@@ -295,3 +295,34 @@ def test_scout_reports_headline_counts_by_provider():
     assert diagnostics["headlines_received"] == diagnostics["rss_headlines"]
     assert diagnostics["provider_headline_counts"]["GDELT DOC"] == 2
     assert diagnostics["provider_headline_counts"]["BBC India"] == 2
+
+
+def test_gdelt_retries_rate_limit_once_with_bounded_delay(monkeypatch):
+    import json
+    import urllib.error
+    import ai_video_factory.channel_workflow as workflow
+
+    monkeypatch.setattr(workflow, "DEFAULT_PUBLISHER_FEEDS", ())
+    delays = []
+    monkeypatch.setattr(workflow.time, "sleep", delays.append)
+    calls = []
+
+    def transport(url):
+        calls.append(url)
+        if len(calls) == 1:
+            raise urllib.error.HTTPError(
+                url, 429, "Too Many Requests", {"Retry-After": "2"}, None
+            )
+        return json.dumps({"articles": [{
+            "title": "Court ruling reshapes government policy",
+            "url": "https://publisher.example/story",
+            "seendate": "20261117103000",
+            "domain": "publisher.example",
+        }]})
+
+    candidates = workflow.scout_topics(
+        queries=["democracy"], transport=transport
+    )
+    assert len(candidates) == 1
+    assert len(calls) == 2
+    assert delays == [5.0]
