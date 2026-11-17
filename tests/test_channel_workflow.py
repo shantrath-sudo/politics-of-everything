@@ -326,3 +326,31 @@ def test_gdelt_retries_rate_limit_once_with_bounded_delay(monkeypatch):
     assert len(candidates) == 1
     assert len(calls) == 2
     assert delays == [5.0]
+
+
+def test_gdelt_retries_transient_non_json_response_once(monkeypatch):
+    import json
+    import ai_video_factory.channel_workflow as workflow
+
+    monkeypatch.setattr(workflow, "DEFAULT_PUBLISHER_FEEDS", ())
+    delays = []
+    monkeypatch.setattr(workflow.time, "sleep", delays.append)
+    calls = []
+
+    def transport(url):
+        calls.append(url)
+        if len(calls) == 1:
+            return "<html>temporary upstream response</html>"
+        return json.dumps({"articles": [{
+            "title": "Constitutional court reviews government policy",
+            "url": "https://publisher.example/story",
+            "seendate": "20261117103000",
+            "domain": "publisher.example",
+        }]})
+
+    candidates = workflow.scout_topics(
+        queries=["democracy"], transport=transport
+    )
+    assert len(candidates) == 1
+    assert len(calls) == 2
+    assert delays == [5.0]
