@@ -354,3 +354,39 @@ def test_gdelt_retries_transient_non_json_response_once(monkeypatch):
     assert len(candidates) == 1
     assert len(calls) == 2
     assert delays == [5.0]
+
+
+
+def test_scout_penalises_incidental_state_or_minister_mentions_in_noise():
+    from ai_video_factory.channel_workflow import _score_candidate
+
+    now = datetime(2026, 11, 17, 12, tzinfo=UTC)
+    basketball = TopicCandidate(
+        candidate_id="basket01",
+        title="Basketball player arrested at Nigerian airport",
+        summary="The player is from the state of Georgia.",
+        url="https://publisher.example/basketball",
+        publishers=["Publisher One"],
+        published_at="Tue, 17 Nov 2026 11:00:00 GMT",
+    )
+    cricket = TopicCandidate(
+        candidate_id="crick01",
+        title="Prince and Princess play street cricket in Mumbai",
+        summary="They met locals ahead of a meeting with the Indian Prime Minister.",
+        url="https://publisher.example/cricket",
+        publishers=["Publisher One"],
+        published_at="Tue, 17 Nov 2026 11:00:00 GMT",
+    )
+    labor = TopicCandidate(
+        candidate_id="labor01",
+        title="Labor leader honored for civil rights and union organizing",
+        summary="Her advocacy changed labor protections and public policy.",
+        url="https://publisher.example/labor",
+        publishers=["Publisher One"],
+        published_at="Tue, 17 Nov 2026 11:00:00 GMT",
+    )
+    for candidate in (basketball, cricket, labor):
+        _score_candidate(candidate, now)
+
+    assert basketball.score < labor.score
+    assert cricket.score < labor.score
