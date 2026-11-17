@@ -403,12 +403,31 @@ def scout(
     """Discover political, economic, international and India-relevant topic leads."""
     try:
         selected_date = date.fromisoformat(report_date) if report_date else _today()
+        diagnostics: dict[str, Any] = {}
         candidates = scout_topics(
             queries=_queries(),
             limit=limit,
             ledger_path=DATA / "topics.jsonl",
+            diagnostics=diagnostics,
         )
-        path = save_scout_report(candidates, DATA, on_date=selected_date)
+        path = save_scout_report(
+            candidates, DATA, on_date=selected_date, diagnostics=diagnostics
+        )
+        typer.echo(
+            "Scout diagnostics: "
+            f"RSS headlines={diagnostics.get('rss_headlines', 0)}; "
+            f"feed failures={diagnostics.get('feed_failures', 0)}; "
+            f"clusters={diagnostics.get('clusters_before_ledger', 0)}; "
+            f"duplicates filtered={diagnostics.get('duplicates_filtered', 0)}; "
+            f"URL attempts={diagnostics.get('resolver_attempts', 0)}; "
+            f"URL failures={diagnostics.get('resolver_failures', 0)}; "
+            f"resolved candidates={diagnostics.get('resolved_candidates', 0)}"
+        )
+        for failure in diagnostics.get("feed_failure_samples", []):
+            typer.echo(f"Feed failure: {failure}", err=True)
+        for failure in diagnostics.get("resolver_failure_samples", []):
+            typer.echo(f"Article URL resolution failure: {failure}", err=True)
+        path = path
         typer.echo(f"Saved {len(candidates)} topic leads: {path}")
         typer.echo(f"Readable shortlist: {path.with_suffix('.md')}")
         for index, candidate in enumerate(candidates, 1):
