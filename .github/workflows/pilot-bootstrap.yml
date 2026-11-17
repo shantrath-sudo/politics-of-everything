@@ -6,6 +6,9 @@ on:
       - channel/bootstrap
     paths:
       - .github/workflows/pilot-bootstrap.yml
+      - src/ai_video_factory/channel_cli.py
+      - src/ai_video_factory/channel_workflow.py
+      - config/pilot-topic.toml
   workflow_dispatch:
 
 permissions:
