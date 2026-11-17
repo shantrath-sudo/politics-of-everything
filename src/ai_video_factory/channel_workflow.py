@@ -259,7 +259,13 @@ def _read_gdelt(
             delay = 5.0
         time.sleep(max(5.0, min(delay, 15.0)))
         response_text = transport(request_url)
-    payload = json.loads(response_text)
+    try:
+        payload = json.loads(response_text)
+    except json.JSONDecodeError:
+        # Some GDELT edge responses are transient HTML/empty bodies despite
+        # a successful HTTP status. Retry once after the same bounded pause.
+        time.sleep(5.0)
+        payload = json.loads(transport(request_url))
     articles = payload.get("articles", []) if isinstance(payload, dict) else []
     rows: list[dict[str, str]] = []
     for article in articles:
