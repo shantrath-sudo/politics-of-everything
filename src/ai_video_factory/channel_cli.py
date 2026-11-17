@@ -367,16 +367,17 @@ def start_pilot() -> None:
             bucket = urls_by_domain.setdefault(domain, [])
             if url not in bucket:
                 bucket.append(url)
-        for item in matched:
-            for url in item.article_urls or [item.url]:
-                if classify_source_quality(url) != "reliable":
-                    continue
-                domain = _publisher_domain(url)
-                if not domain:
-                    continue
-                bucket = urls_by_domain.setdefault(domain, [])
-                if url not in bucket:
-                    bucket.append(url)
+        if not config.get("seed_source_urls"):
+            for item in matched:
+                for url in item.article_urls or [item.url]:
+                    if classify_source_quality(url) != "reliable":
+                        continue
+                    domain = _publisher_domain(url)
+                    if not domain:
+                        continue
+                    bucket = urls_by_domain.setdefault(domain, [])
+                    if url not in bucket:
+                        bucket.append(url)
 
         # Take one source per reliable publisher first, then add further corroborating material.
         selected_urls = [items[0] for items in urls_by_domain.values() if items]
