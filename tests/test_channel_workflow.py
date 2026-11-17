@@ -164,7 +164,7 @@ def test_scout_reports_feed_and_article_resolution_diagnostics():
     )
 
     assert candidates == []
-    assert diagnostics["rss_headlines"] == 2
+    assert diagnostics["rss_headlines"] == 6
     assert diagnostics["clusters_before_ledger"] == 1
     assert diagnostics["clusters_after_ledger"] == 1
     assert diagnostics["resolver_attempts"] == 2
