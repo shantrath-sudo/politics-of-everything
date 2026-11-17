@@ -72,7 +72,7 @@ DEFAULT_PUBLISHER_FEEDS = (
     ("BBC India", "https://feeds.bbci.co.uk/news/world/asia/india/rss.xml"),
     ("The Hindu", "https://www.thehindu.com/feeder/default.rss"),
     # Primary government releases are discovery leads, not independent journalism.
-    ("PIB (Government of India)", "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1"),
+    ("PIB (Government of India)", "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3"),
     ("Business Standard", "https://www.business-standard.com/rss/home_page_top_stories.rss"),
     ("Guardian World", "https://www.theguardian.com/world/rss"),
     ("NPR", "https://feeds.npr.org/1001/rss.xml"),
