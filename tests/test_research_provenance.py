@@ -313,6 +313,49 @@ def test_production_extractor_fails_closed_after_exhausting_retries(monkeypatch)
     )
     with pytest.raises(ResearchError, match="invalid classification"):
         extractor("Water Beyond Earth", [_source("NASA carried water on Mars in 2021.")])
+def test_production_extractor_uses_verbatim_fallback_when_model_output_is_empty(monkeypatch):
+    """A non-conforming local-model reply falls back to exact sourced sentences."""
+    from ai_video_factory import research_pipeline as research
+
+    empty_payload = json.dumps({
+        "choices": [{"message": {"content": "I cannot provide the requested format."}}]
+    }).encode("utf-8")
+    _install_fake_urllib(monkeypatch, "")
+    monkeypatch.setattr(research, "_lmstudio_models_bytes", lambda url: _MODELS_BYTES)
+    request_mod = sys.modules["urllib.request"]
+
+    class Response:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def read(self):
+            return empty_payload
+
+    monkeypatch.setattr(request_mod, "urlopen", lambda *args, **kwargs: Response())
+    stamped = {}
+    extractor = make_production_extractor(
+        endpoint_url="http://127.0.0.1:9/v1/chat/completions",
+        model_name="m-a",
+        max_attempts=1,
+    )
+    source_text = (
+        "The Election Commission of India was established in 1950. "
+        "The Constitution of India provides for an independent election authority."
+    )
+    result = extractor(
+        "Who Really Controls a Democracy?",
+        [_source(source_text)],
+        identity=lambda name, version, schema, **kwargs: stamped.update(
+            {"name": name, "version": version, "schema": schema, **kwargs}
+        ),
+    )
+    assert result
+    assert all(item.quote in source_text for item in result)
+    assert stamped["name"] == "deterministic-grounded-fallback"
+    assert stamped["model_id"] is None
+
+
 def test_build_claims_from_records_requires_two_distinct_sources():
     # Same normalized claim from two distinct NASA URLs + supported labels => one
     # corroborated claim carrying both source URLs.
