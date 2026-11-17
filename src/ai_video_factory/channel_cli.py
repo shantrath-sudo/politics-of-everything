@@ -843,10 +843,14 @@ def model_check() -> None:
             32,
             model=model_id,
         )
-        if not isinstance(response, str) or not response.strip():
-            raise ChannelWorkflowError("local model returned an empty response")
+        if not isinstance(response, str) or response.strip().upper() != "READY":
+            preview = response.strip()[:120] if isinstance(response, str) else repr(response)
+            raise ChannelWorkflowError(
+                "local model did not follow the readiness prompt exactly; "
+                f"expected READY, received: {preview!r}"
+            )
         typer.echo(f"Local model smoke test passed: {model_id}")
-        typer.echo(f"Response: {response.strip()[:120]}")
+        typer.echo("Response: READY")
     except Exception as error:
         typer.echo(f"Local model smoke test failed: {error}", err=True)
         raise typer.Exit(code=2)
