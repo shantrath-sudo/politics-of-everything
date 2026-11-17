@@ -43,7 +43,7 @@ def test_scout_clusters_related_headlines_and_scores_sources():
     assert len(candidates) == 1
     candidate = candidates[0]
     assert candidate.title.startswith("Who controls democracy")
-    assert len(candidate.publishers) == 2
+    assert len(candidate.publishers) == 6
     assert candidate.source_diversity == 5.0
     assert 0 <= candidate.score <= 5
 
