@@ -58,7 +58,8 @@ LOW_EDITORIAL_SIGNAL_TERMS = {
     "celebrity", "actor", "actress", "singer", "cricket", "football",
     "basketball", "tennis", "match", "tournament", "travel", "tourism",
     "holiday", "recipe", "fashion", "beauty", "restaurant", "concert",
-    "outage", "downtime",
+    "outage", "downtime", "basketball", "cricket", "prince",
+    "princess", "royal", "celebrity",
 }
 
 
@@ -178,7 +179,7 @@ def _score_candidate(candidate: TopicCandidate, now: datetime) -> None:
     # Penalise obvious lifestyle/sports/celebrity noise only when the story
     # lacks a substantive political or institutional dimension. This is a
     # ranking signal, never an automatic editorial rejection.
-    relevance_penalty = 1.5 if weak_hits and strong_hits == 0 else 0.0
+    relevance_penalty = 2.0 if weak_hits and strong_hits == 0 else 0.0
     # A transparent discovery priority score, not a factual-confidence score.
     candidate.score = round(max(0.0,
         candidate.topic_fit * 0.30
@@ -243,7 +244,22 @@ def _read_gdelt(
         "timespan": "24h",
         "sort": "DateDesc",
     })
-    payload = json.loads(transport(f"{GDELT_DOC_ENDPOINT}?{params}"))
+    request_url = f"{GDELT_DOC_ENDPOINT}?{params}"
+    try:
+        response_text = transport(request_url)
+    except urllib.error.HTTPError as error:
+        if error.code != 429:
+            raise
+        # GDELT asks clients to pace requests. Retry a single time only,
+        # honouring Retry-After but bounding the wait to avoid runaway jobs.
+        retry_after = error.headers.get("Retry-After") if error.headers else None
+        try:
+            delay = float(retry_after) if retry_after else 5.0
+        except (TypeError, ValueError):
+            delay = 5.0
+        time.sleep(max(5.0, min(delay, 15.0)))
+        response_text = transport(request_url)
+    payload = json.loads(response_text)
     articles = payload.get("articles", []) if isinstance(payload, dict) else []
     rows: list[dict[str, str]] = []
     for article in articles:
