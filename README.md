@@ -20,7 +20,7 @@ Read CHANNEL.md, EDITORIAL_CONSTITUTION.md, PRODUCTION_PLAN.md, and docs/DECISIO
 
 ### Local topic scouting and editorial state
 
-The politics-channel command uses one free GDELT DOC ArticleList search over a 24-hour window, combined with direct RSS feeds from BBC India, The Hindu, Indian Express, Business Standard, The Guardian World and NPR. It validates direct HTTPS publisher links, clusters related headlines and scores candidates. It requires no API key and makes no paid API calls.
+The politics-channel command uses one free GDELT DOC ArticleList search over a 24-hour window, combined with direct RSS feeds from BBC India, The Hindu, Government of India Press Information Bureau (PIB), Business Standard, The Guardian World and NPR. It validates direct HTTPS publisher links, clusters related headlines and scores candidates. It requires no API key and makes no paid API calls.
 
     politics-channel start-pilot
     politics-channel scout
@@ -96,4 +96,4 @@ See docs/LOCAL_SETUP.md for the one-time Mac setup, model and TTS installation, 
 
 ### Topic discovery sources
 
-Topic scouting uses the free GDELT DOC API (24-hour ArticleList search) and direct publisher RSS feeds. Google News RSS and Google News redirect resolution are not used. GDELT is a discovery index, not a verification source; all reporting still passes through the channel's existing research and editorial approval workflow. GDELT project: https://www.gdeltproject.org/.
+Topic scouting uses the free GDELT DOC API (24-hour ArticleList search), direct publisher RSS feeds and the official PIB Press Releases RSS feed. Google News RSS and Google News redirect resolution are not used. PIB releases are primary government-source leads, not independent journalism and not corroboration. GDELT is a discovery index, not a verification source; all reporting still passes through the channel's existing research and editorial approval workflow. GDELT project: https://www.gdeltproject.org/.
