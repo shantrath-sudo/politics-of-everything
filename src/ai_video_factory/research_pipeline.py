@@ -1084,6 +1084,18 @@ def make_production_extractor(
                 last_error = exc
 
         if accepted is None:
+            # A hard deadline is an operational stop, not permission to bypass the
+            # configured model budget with additional extraction work.
+            if isinstance(last_error, _SourceDeadlineExhausted):
+                raise last_error
+            # Malformed structured output, invalid classifications, and ungrounded
+            # quotes are explicit integrity failures. Keep these fail-closed; the
+            # deterministic fallback is reserved for genuinely empty/unusable replies.
+            if last_error is not None and any(
+                marker in str(last_error).lower()
+                for marker in ("malformed output line", "invalid classification", "quote not present", "without claim text")
+            ):
+                raise last_error
             # The model is an assistive extractor, not a single point of failure.
             # Fall back to verbatim source sentences only: no generated/paraphrased
             # claims are introduced. The normal grounding gate and independent-source
