@@ -164,7 +164,7 @@ def test_scout_queries_both_india_and_international_editions():
     assert candidates
     assert any("api.gdeltproject.org/api/v2/doc/doc" in url for url in requested)
     assert any("feeds.bbci.co.uk" in url for url in requested)
-    assert any("pib.gov.in/RssMain.aspx" in url for url in requested)
+    assert any("pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3" in url for url in requested)
     assert not any("indianexpress.com" in url for url in requested)
     assert not any("news.google.com" in url for url in requested)
 
