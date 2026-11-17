@@ -7,7 +7,7 @@ Status is evidence-based: COMPLETE only after code exists and its relevant autom
 | 1 | Audit source repository and dependencies | COMPLETE | Repository tree, source modules, test inventory and render report inspected |
 | 2 | Establish channel working repository | COMPLETE | Fork verified; write permission confirmed |
 | 3 | Channel configuration and editorial identity | COMPLETE | Channel config, editorial constitution, production plan and fixed decisions committed |
-| 4 | Daily topic discovery and scoring | COMPLETE | GDELT DOC 24-hour topic search plus direct India/international publisher RSS, topic scoring, clustering and CI tests; no GDELT redirects |
+| 4 | Daily topic discovery and scoring | IN PROGRESS | GDELT DOC 24-hour topic search plus independent publisher RSS; direct-link validation, per-provider headline diagnostics and low-relevance noise penalty added; latest ranking changes awaiting CI and a second live shortlist review |
 | 5 | Duplicate detection and topic ledger | COMPLETE | Covered-topic ledger checked during scouting; updated only after final approval |
 | 6 | Research dossier and source-quality rules | IN PROGRESS | HTTPS-only research transport validates every redirect destination, blocks private/loopback/link-local/reserved hosts, caps redirects/body size and enforces bounded request deadlines; real publisher fetch/extraction still needs Mac smoke test |
 | 7 | Claim ledger and corroboration | IN PROGRESS | Source, claim, contradiction and verified-fact artifacts integrated; verbatim evidence grounding and two independent reliable publisher domains required for promotion; real dossier not yet generated |
@@ -62,3 +62,12 @@ This CI verifies repository code on GitHub's Linux runner; it does not prove a l
 - All candidate links must be credential-free HTTPS URLs and pass the existing blocked/private-host check before entering the shortlist.
 - GDELT and publisher feeds are discovery inputs only. The separate research pipeline remains responsible for fetching, extracting, corroborating and verifying claims.
 - GDELT attribution: https://www.gdeltproject.org/ . No API key, paid API or BigQuery dependency is introduced.
+
+
+## Discovery quality iteration (2026-11-17)
+
+- The first live run exposed two provider failures (GDELT HTTP 429 and Indian Express HTTP 403) while the remaining RSS feeds still supplied 148 headlines.
+- Added per-provider headline counts so future reports identify which feeds contribute results, rather than only showing a combined total.
+- Added a conservative ranking penalty for obvious lifestyle/sports/celebrity signals only when a headline has no substantive political or institutional signal. This is a ranking adjustment, not an automatic rejection; editorial review remains mandatory.
+- Regression tests cover political-story ranking ahead of sports/lifestyle noise and provider-level diagnostics.
+- The next live scout run must confirm whether the shortlist improves. GDELT retry/backoff and alternative feed selection remain open pending evidence from another run; do not claim provider reliability is fixed yet.
