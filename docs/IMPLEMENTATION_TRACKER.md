@@ -78,7 +78,7 @@ This CI verifies repository code on GitHub's Linux runner; it does not prove a l
 ## Primary-source discovery fallback (2026-11-17)
 
 - Removed the Indian Express RSS endpoint from the scout after the live GitHub runner received HTTP 403.
-- Added the official Press Information Bureau (Government of India) Press Releases RSS endpoint as a primary-source discovery input. The official PIB RSS index lists this feed: https://www.pib.gov.in/ViewRss.aspx?lang=1&reg=1.
+- Added the official Press Information Bureau (Government of India) Press Releases RSS endpoint as a primary-source discovery input. The official PIB RSS index lists the regional feed format; the first live run showed the all-region `Regid=1` endpoint returned zero headlines, so the feed now uses the active national feed `Regid=3`: https://www.pib.gov.in/ViewRss.aspx?lang=1&reg=3.
 - PIB releases are government-originated leads, not independent journalism. The discovery source-diversity score explicitly excludes PIB so its presence cannot inflate the independent-publisher signal.
 - Regression tests assert the new feed is requested, the blocked Indian Express endpoint is absent, and PIB does not count as an independent publisher.
 - Pending: validate the updated provider mix in the next live scout run. GDELT HTTP 429 remains a known reliability issue; RSS fallback remains functional.
