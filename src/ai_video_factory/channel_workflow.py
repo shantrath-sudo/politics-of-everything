@@ -46,6 +46,20 @@ FIT_TERMS = {
 }
 INDIA_TERMS = {"india", "indian", "delhi", "modi", "parliament", "lok", "sabha", "rajya", "rupee"}
 GLOBAL_TERMS = {"global", "world", "international", "un", "china", "america", "us", "europe", "eu", "africa", "asia", "geopolitics"}
+STRONG_POLITICAL_TERMS = {
+    "democracy", "government", "politics", "political", "power", "state",
+    "constitution", "election", "parliament", "court", "policy", "law",
+    "institution", "governance", "minister", "president", "congress",
+    "rights", "protest", "diplomacy", "sanction", "regulation", "surveillance",
+    "inequality", "labour", "labor", "tax", "budget", "trade", "war",
+    "conflict", "migration", "immigration", "incarceration", "climate",
+}
+LOW_EDITORIAL_SIGNAL_TERMS = {
+    "celebrity", "actor", "actress", "singer", "cricket", "football",
+    "basketball", "tennis", "match", "tournament", "travel", "tourism",
+    "holiday", "recipe", "fashion", "beauty", "restaurant", "concert",
+    "outage", "downtime",
+}
 
 
 class ChannelWorkflowError(RuntimeError):
@@ -159,15 +173,21 @@ def _score_candidate(candidate: TopicCandidate, now: datetime) -> None:
     candidate.international_relevance = min(5.0, global_hits * 1.25)
     candidate.recency = _recency_score(candidate.published_at, now)
     candidate.source_diversity = min(5.0, float(len(set(candidate.publishers))) * 1.5)
+    strong_hits = len(tokens & STRONG_POLITICAL_TERMS)
+    weak_hits = len(tokens & LOW_EDITORIAL_SIGNAL_TERMS)
+    # Penalise obvious lifestyle/sports/celebrity noise only when the story
+    # lacks a substantive political or institutional dimension. This is a
+    # ranking signal, never an automatic editorial rejection.
+    relevance_penalty = 1.5 if weak_hits and strong_hits == 0 else 0.0
     # A transparent discovery priority score, not a factual-confidence score.
-    candidate.score = round(
+    candidate.score = round(max(0.0,
         candidate.topic_fit * 0.30
         + candidate.international_relevance * 0.20
         + candidate.india_relevance * 0.15
         + candidate.recency * 0.20
-        + candidate.source_diversity * 0.15,
-        3,
-    )
+        + candidate.source_diversity * 0.15
+        - relevance_penalty,
+    ), 3)
 
 
 def _valid_publisher_url(url: str) -> bool:
@@ -276,8 +296,11 @@ def scout_topics(
 
     rows: list[dict[str, str]] = []
     failures: list[str] = []
+    provider_counts: dict[str, int] = {"GDELT DOC": 0}
     try:
-        rows.extend(_read_gdelt(queries, transport))
+        gdelt_rows = _read_gdelt(queries, transport)
+        rows.extend(gdelt_rows)
+        provider_counts["GDELT DOC"] = len(gdelt_rows)
     except Exception as error:
         failures.append(f"GDELT DOC: {type(error).__name__}: {str(error)[:240]}")
 
@@ -291,8 +314,11 @@ def scout_topics(
         for future in as_completed(futures):
             publisher, url = futures[future]
             try:
-                rows.extend(_parse_publisher_rss(future.result(), publisher, publisher))
+                provider_rows = _parse_publisher_rss(future.result(), publisher, publisher)
+                rows.extend(provider_rows)
+                provider_counts[publisher] = len(provider_rows)
             except Exception as error:
+                provider_counts[publisher] = 0
                 failures.append(f"{publisher} RSS: {type(error).__name__}: {str(error)[:240]}")
 
     if diagnostics is not None:
@@ -301,6 +327,8 @@ def scout_topics(
             "queries_requested": 1 + len(DEFAULT_PUBLISHER_FEEDS),
             "feed_failures": len(failures),
             "feed_failure_samples": failures[:8],
+            "provider_headline_counts": provider_counts,
+            "headlines_received": len(rows),
             "rss_headlines": len(rows),
             "gdelt_window": "24h",
             "article_url_resolution_attempts": 0,
@@ -390,7 +418,8 @@ def save_scout_report(
         lines.extend([
             "## Discovery diagnostics",
             "",
-            f"- RSS headlines received: {diagnostics.get('rss_headlines', 0)}",
+            f"- Headlines received: {diagnostics.get('headlines_received', diagnostics.get('rss_headlines', 0))}",
+            f"- Provider counts: {diagnostics.get('provider_headline_counts', {})}",
             f"- Feed requests failed: {diagnostics.get('feed_failures', 0)} of {diagnostics.get('queries_requested', 0)}",
             f"- Unique headline clusters: {diagnostics.get('clusters_before_ledger', 0)}",
             f"- Previously covered topics filtered: {diagnostics.get('duplicates_filtered', 0)}",
