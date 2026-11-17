@@ -1036,6 +1036,7 @@ def make_production_extractor(
 
         accepted: list[Extraction] | None = None
         last_error: Exception | None = None
+        last_model_output = ""
         attempt_count = max(1, int(max_attempts))
         extraction_started = time.monotonic()
 
@@ -1076,6 +1077,7 @@ def make_production_extractor(
                 continue
 
             content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            last_model_output = content if isinstance(content, str) else ""
             try:
                 accepted = _parse(content)
                 break
@@ -1091,9 +1093,15 @@ def make_production_extractor(
             # Malformed structured output, invalid classifications, and ungrounded
             # quotes are explicit integrity failures. Keep these fail-closed; the
             # deterministic fallback is reserved for genuinely empty/unusable replies.
-            if last_error is not None and any(
-                marker in str(last_error).lower()
-                for marker in ("malformed output line", "invalid classification", "quote not present", "without claim text")
+            if last_error is not None and (
+                any(
+                    marker in str(last_error).lower()
+                    for marker in ("invalid classification", "quote not present", "without claim text")
+                )
+                or (
+                    "malformed output line" in str(last_error).lower()
+                    and "|" in last_model_output
+                )
             ):
                 raise last_error
             # The model is an assistive extractor, not a single point of failure.
