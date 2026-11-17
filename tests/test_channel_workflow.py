@@ -147,3 +147,28 @@ def test_scout_queries_both_india_and_international_editions():
     assert any("hl=en-IN" in url and "gl=IN" in url for url in requested)
     assert any("hl=en-GB" in url and "gl=GB" in url for url in requested)
     assert any("hl=en-US" in url and "gl=US" in url for url in requested)
+
+def test_scout_reports_feed_and_article_resolution_diagnostics():
+    diagnostics = {}
+
+    def failed_resolver(url):
+        raise TimeoutError(f"simulated timeout for {url}")
+
+    candidates = scout_topics(
+        queries=["democracy"],
+        transport=lambda _url: RSS,
+        now=datetime(2026, 11, 15, 12, tzinfo=UTC),
+        limit=10,
+        resolver=failed_resolver,
+        diagnostics=diagnostics,
+    )
+
+    assert candidates == []
+    assert diagnostics["rss_headlines"] == 2
+    assert diagnostics["clusters_before_ledger"] == 1
+    assert diagnostics["clusters_after_ledger"] == 1
+    assert diagnostics["resolver_attempts"] == 2
+    assert diagnostics["resolver_failures"] == 2
+    assert diagnostics["resolved_candidates"] == 0
+    assert diagnostics["resolver_failure_samples"]
+
