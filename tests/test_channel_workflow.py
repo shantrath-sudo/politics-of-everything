@@ -390,3 +390,21 @@ def test_scout_penalises_incidental_state_or_minister_mentions_in_noise():
 
     assert basketball.score < labor.score
     assert cricket.score < labor.score
+
+
+
+def test_generic_state_and_law_words_do_not_exempt_sports_noise():
+    from ai_video_factory.channel_workflow import _score_candidate
+
+    candidate = TopicCandidate(
+        candidate_id="basket02",
+        title="US basketball player arrested at Nigerian airport",
+        summary="Drug smuggling carries life sentence in Nigeria. The player is from the state of Georgia.",
+        url="https://publisher.example/basketball",
+        publishers=["Publisher One"],
+        published_at="Tue, 17 Nov 2026 11:00:00 GMT",
+    )
+    _score_candidate(candidate, datetime(2026, 11, 17, 12, tzinfo=UTC))
+    # Generic uses of "state" and "law" in a crime brief are not enough
+    # to turn an unrelated sports story into a political documentary lead.
+    assert candidate.score < 1.0
