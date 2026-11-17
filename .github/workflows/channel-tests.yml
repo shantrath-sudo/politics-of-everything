@@ -25,16 +25,82 @@ on:
       - src/**
       - tests/**
   workflow_dispatch:
+    inputs:
+      suite:
+        description: "Choose the test tier"
+        type: choice
+        required: true
+        default: fast
+        options:
+          - fast
+          - full
 
 permissions:
   contents: read
 
 concurrency:
-  group: channel-tests-v2-${{ github.ref }}
+  group: channel-tests-v3-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  tests:
+  fast-tests:
+    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'fast'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Check zsh launcher syntax
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh ffmpeg
+          for script in scripts/*.sh; do zsh -n "$script"; done
+      - name: Install project and test dependencies
+        run: uv sync --dev --extra tts
+      - name: Compile Python source
+        run: uv run python -m compileall -q src
+      - name: Check channel CLI
+        run: uv run --extra tts politics-channel --help
+      - name: Run fast channel and inference tests
+        run: >-
+          uv run pytest -q
+          tests/test_channel_workflow.py
+          tests/test_channel_cli.py
+          tests/test_channel_revision.py
+          tests/test_launchd_schedule.py
+          tests/test_channel_delivery.py
+          tests/test_publisher.py
+          tests/test_channel_theme.py
+          tests/test_mac_inference.py
+          tests/test_longform.py
+          tests/test_duration_enforcer.py
+          tests/test_formats.py
+          tests/test_scheduler.py
+          tests/test_inference_config.py
+          tests/test_inference_service.py
+          tests/test_research_pipeline.py
+          tests/test_research_provenance.py
+          tests/test_cli.py
+          tests/test_nightly_batch.py
+          tests/test_production.py
+          tests/test_pipeline.py
+          tests/test_qc_editorial.py
+          tests/test_qc_final.py
+          tests/test_packaging.py
+          tests/test_source_verifier.py
+          tests/test_trend.py
+          tests/test_assets.py
+          tests/test_stock_visual_path.py
+          tests/test_music_bed.py
+
+  full-regression:
+    if: github.event_name == 'workflow_dispatch' && inputs.suite == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -57,35 +123,5 @@ jobs:
         run: uv run python -m compileall -q src
       - name: Check channel CLI
         run: uv run --extra tts politics-channel --help
-      - name: Run channel and inference tests
-        run: >-
-          uv run pytest -vv --durations=20
-          tests/test_channel_workflow.py
-          tests/test_channel_cli.py
-          tests/test_channel_revision.py
-          tests/test_launchd_schedule.py
-          tests/test_channel_delivery.py
-          tests/test_publisher.py
-          tests/test_channel_theme.py
-          tests/test_mac_inference.py
-          tests/test_longform.py
-          tests/test_duration_enforcer.py
-          tests/test_formats.py
-          tests/test_scheduler.py
-          tests/test_inference_config.py
-          tests/test_inference_service.py
-          tests/test_research_pipeline.py
-          tests/test_research_provenance.py
-          tests/test_cli.py
-          tests/test_daily_job.py
-          tests/test_nightly_batch.py
-          tests/test_production.py
-          tests/test_pipeline.py
-          tests/test_qc_editorial.py
-          tests/test_qc_final.py
-          tests/test_packaging.py
-          tests/test_source_verifier.py
-          tests/test_trend.py
-          tests/test_assets.py
-          tests/test_stock_visual_path.py
-          tests/test_music_bed.py
+      - name: Run complete regression suite
+        run: uv run pytest -q --durations=20 tests
