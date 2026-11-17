@@ -63,6 +63,35 @@ DEFAULT_PUBLISHER_FEEDS = (
 
 GDELT_DOC_ENDPOINT = "https://api.gdeltproject.org/api/v2/doc/doc"
 
+MAX_DISCOVERY_RESPONSE_BYTES = 2 * 1024 * 1024
+
+
+def _transport(url: str) -> str:
+    """Fetch a bounded discovery feed/API response over HTTPS."""
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise ValueError("discovery requests require an HTTPS URL")
+    from ai_video_factory.research_pipeline import _is_blocked_host
+    if _is_blocked_host(parsed.hostname):
+        raise ValueError("discovery request host is blocked")
+
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/json, application/rss+xml, application/xml, text/xml",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=20) as response:
+        final_url = response.geturl()
+        final = urlsplit(final_url)
+        if final.scheme != "https" or not final.hostname or _is_blocked_host(final.hostname):
+            raise ValueError("discovery response redirected to a blocked or non-HTTPS URL")
+        payload = response.read(MAX_DISCOVERY_RESPONSE_BYTES + 1)
+    if len(payload) > MAX_DISCOVERY_RESPONSE_BYTES:
+        raise ValueError("discovery response exceeded the 2 MiB limit")
+    return payload.decode("utf-8-sig", errors="replace")
+
 
 @dataclass
 class TopicCandidate:
