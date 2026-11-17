@@ -6,6 +6,7 @@ import shutil
 import tomllib
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
@@ -427,7 +428,6 @@ def scout(
             typer.echo(f"Feed failure: {failure}", err=True)
         for failure in diagnostics.get("resolver_failure_samples", []):
             typer.echo(f"Article URL resolution failure: {failure}", err=True)
-        path = path
         typer.echo(f"Saved {len(candidates)} topic leads: {path}")
         typer.echo(f"Readable shortlist: {path.with_suffix('.md')}")
         for index, candidate in enumerate(candidates, 1):
