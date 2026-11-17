@@ -255,3 +255,43 @@ def test_publisher_rss_is_used_when_gdelt_fails(monkeypatch):
     assert "Publisher One" in candidates[0].publishers
     assert diagnostics["feed_failures"] == 1
     assert diagnostics["providers"] == ["GDELT DOC", "direct publisher RSS"]
+
+
+def test_scout_penalises_lifestyle_noise_without_rejecting_political_stories():
+    from ai_video_factory.channel_workflow import _score_candidate
+
+    now = datetime(2026, 11, 17, 12, tzinfo=UTC)
+    noise = TopicCandidate(
+        candidate_id="noise01",
+        title="Basketball star announces travel plans after tournament",
+        summary="",
+        url="https://publisher.example/noise",
+        publishers=["Publisher One"],
+        published_at="Tue, 17 Nov 2026 11:00:00 GMT",
+    )
+    politics = TopicCandidate(
+        candidate_id="policy01",
+        title="Court ruling reshapes government surveillance policy",
+        summary="A constitutional rights dispute over state power",
+        url="https://publisher.example/policy",
+        publishers=["Publisher One"],
+        published_at="Tue, 17 Nov 2026 11:00:00 GMT",
+    )
+    _score_candidate(noise, now)
+    _score_candidate(politics, now)
+    assert politics.score > noise.score
+
+
+def test_scout_reports_headline_counts_by_provider():
+    diagnostics = {}
+    candidates = scout_topics(
+        queries=["democracy"],
+        transport=_discovery_transport,
+        now=datetime(2026, 11, 15, 12, tzinfo=UTC),
+        limit=10,
+        diagnostics=diagnostics,
+    )
+    assert candidates
+    assert diagnostics["headlines_received"] == diagnostics["rss_headlines"]
+    assert diagnostics["provider_headline_counts"]["GDELT DOC"] == 2
+    assert diagnostics["provider_headline_counts"]["BBC India"] == 2
