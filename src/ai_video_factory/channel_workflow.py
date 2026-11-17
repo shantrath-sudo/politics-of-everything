@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -52,6 +53,10 @@ GLOBAL_TERMS = {"global", "world", "international", "un", "china", "america", "u
 
 class ChannelWorkflowError(RuntimeError):
     """Raised when an editorial workflow transition is invalid."""
+
+
+class ArticleResolutionRateLimited(ChannelWorkflowError):
+    """Raised when Google News continues rate limiting article-link resolution."""
 
 
 @dataclass
@@ -139,7 +144,7 @@ def _score_candidate(candidate: TopicCandidate, now: datetime) -> None:
 
 
 def _resolve_article_url(url: str) -> str:
-    """Resolve a Google News redirect to its HTTPS publisher URL safely."""
+    """Resolve a Google News redirect safely, with bounded 429/503 backoff."""
     from ai_video_factory.research_pipeline import _is_blocked_host
 
     def validate(candidate: str) -> None:
@@ -155,23 +160,47 @@ def _resolve_article_url(url: str) -> str:
             validate(destination)
             return super().redirect_request(req, fp, code, msg, headers, destination)
 
+    def retry_delay(error: HTTPError, retry_number: int) -> float:
+        retry_after = error.headers.get("Retry-After") if error.headers else None
+        if retry_after:
+            try:
+                return min(10.0, max(0.0, float(retry_after)))
+            except ValueError:
+                try:
+                    return min(10.0, max(0.0, (parsedate_to_datetime(retry_after) - datetime.now(UTC)).total_seconds()))
+                except (TypeError, ValueError, OverflowError):
+                    pass
+        return min(4.0, 0.5 * (2 ** retry_number))
+
     validate(url)
-    opener = build_opener(SafeRedirects())
-    request = Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
-    try:
-        with opener.open(request, timeout=12) as response:
-            resolved = response.geturl()
-    except HTTPError as error:
-        if error.code not in {405, 501}:
-            raise ChannelWorkflowError(f"could not resolve article link (HTTP {error.code})") from error
-        request = Request(url, headers={"User-Agent": USER_AGENT, "Range": "bytes=0-0"})
-        with opener.open(request, timeout=12) as response:
-            resolved = response.geturl()
-    validate(resolved)
-    host = (urlsplit(resolved).hostname or "").lower()
-    if host == "news.google.com" or host.endswith(".news.google.com"):
-        raise ChannelWorkflowError("Google News did not resolve to the publisher article")
-    return resolved
+    for attempt in range(3):
+        opener = build_opener(SafeRedirects())
+        request = Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
+        try:
+            try:
+                with opener.open(request, timeout=12) as response:
+                    resolved = response.geturl()
+            except HTTPError as error:
+                if error.code in {429, 503}:
+                    if attempt == 2:
+                        raise ArticleResolutionRateLimited(
+                            f"Google News rate limit persisted after {attempt + 1} attempts (HTTP {error.code})"
+                        ) from error
+                    time.sleep(retry_delay(error, attempt))
+                    continue
+                if error.code not in {405, 501}:
+                    raise ChannelWorkflowError(f"could not resolve article link (HTTP {error.code})") from error
+                request = Request(url, headers={"User-Agent": USER_AGENT, "Range": "bytes=0-0"})
+                with opener.open(request, timeout=12) as response:
+                    resolved = response.geturl()
+            validate(resolved)
+            host = (urlsplit(resolved).hostname or "").lower()
+            if host == "news.google.com" or host.endswith(".news.google.com"):
+                raise ChannelWorkflowError("Google News did not resolve to the publisher article")
+            return resolved
+        except ArticleResolutionRateLimited:
+            raise
+    raise ArticleResolutionRateLimited("Google News rate limit prevented article URL resolution")
 
 
 FEED_EDITIONS = (
@@ -224,6 +253,7 @@ def scout_topics(
     ledger_path: Path | None = None,
     resolver: Callable[[str], str] | None = None,
     diagnostics: dict[str, Any] | None = None,
+    max_resolution_attempts: int = 80,
 ) -> list[TopicCandidate]:
     """Discover and rank political/economic/societal topics from public RSS.
 
@@ -231,6 +261,8 @@ def scout_topics(
     """
     if limit < 1:
         raise ValueError("limit must be at least 1")
+    if max_resolution_attempts < 1:
+        raise ValueError("max_resolution_attempts must be at least 1")
     queries = queries or DEFAULT_QUERIES
     transport = transport or _transport
     resolver = resolver or _resolve_article_url
@@ -302,33 +334,33 @@ def scout_topics(
     resolved: list[TopicCandidate] = []
     resolver_failures: list[str] = []
     resolver_attempts = 0
+    resolution_limit_reached = False
+    rate_limited = False
     for candidate in clusters:
-        article_urls = candidate.article_urls[:4]
-        resolver_attempts += len(article_urls)
-        direct_by_index: dict[int, str] = {}
-        with ThreadPoolExecutor(max_workers=min(8, max(1, len(article_urls)))) as pool:
-            futures = {
-                pool.submit(resolver, article_url): index
-                for index, article_url in enumerate(article_urls)
-            }
-            for future in as_completed(futures):
-                try:
-                    direct_by_index[futures[future]] = future.result()
-                except Exception as error:
-                    parsed_host = (urlsplit(article_urls[futures[future]]).hostname or "unknown host")
-                    resolver_failures.append(
-                        f"{parsed_host}: {type(error).__name__}: {str(error)[:240]}"
-                    )
-        direct_urls = list(dict.fromkeys(
-            direct_by_index[index]
-            for index in sorted(direct_by_index)
-        ))
-        if not direct_urls:
-            continue
-        candidate.article_urls = direct_urls
-        candidate.url = direct_urls[0]
-        resolved.append(candidate)
-        if len(resolved) >= limit:
+        direct_urls: list[str] = []
+        # Resolve sequentially; parallel redirect bursts triggered Google News HTTP 429s.
+        for article_url in candidate.article_urls[:4]:
+            if resolver_attempts >= max_resolution_attempts:
+                resolution_limit_reached = True
+                break
+            resolver_attempts += 1
+            try:
+                direct_url = resolver(article_url)
+                if direct_url not in direct_urls:
+                    direct_urls.append(direct_url)
+            except ArticleResolutionRateLimited as error:
+                parsed_host = urlsplit(article_url).hostname or "unknown host"
+                resolver_failures.append(f"{parsed_host}: {type(error).__name__}: {str(error)[:240]}")
+                rate_limited = True
+                break
+            except Exception as error:
+                parsed_host = urlsplit(article_url).hostname or "unknown host"
+                resolver_failures.append(f"{parsed_host}: {type(error).__name__}: {str(error)[:240]}")
+        if direct_urls:
+            candidate.article_urls = direct_urls
+            candidate.url = direct_urls[0]
+            resolved.append(candidate)
+        if rate_limited or resolution_limit_reached or len(resolved) >= limit:
             break
     if diagnostics is not None:
         diagnostics.update({
@@ -339,6 +371,9 @@ def scout_topics(
             "resolver_failures": len(resolver_failures),
             "resolver_failure_samples": resolver_failures[:10],
             "resolved_candidates": len(resolved),
+            "resolution_attempt_limit": max_resolution_attempts,
+            "resolution_attempt_limit_reached": resolution_limit_reached,
+            "resolution_stopped_for_rate_limit": rate_limited,
         })
     return resolved
 
