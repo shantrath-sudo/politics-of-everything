@@ -228,7 +228,11 @@ minimum_reliable_domains = 2
             score=4.5,
         ),
     ]
-    monkeypatch.setattr(channel_cli, "scout_topics", lambda queries, limit: (candidates, []))
+    monkeypatch.setattr(
+        channel_cli,
+        "scout_topics",
+        lambda *, queries, limit, diagnostics=None: candidates,
+    )
 
     result = CliRunner().invoke(channel_cli.app, ["start-pilot"])
     assert result.exit_code == 0, result.output
