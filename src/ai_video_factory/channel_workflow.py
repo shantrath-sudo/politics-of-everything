@@ -8,13 +8,10 @@ from __future__ import annotations
 import json
 import re
 import shutil
-import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from urllib.error import HTTPError
-from urllib.parse import urljoin, urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.parse import urlsplit
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, date, datetime
@@ -55,8 +52,16 @@ class ChannelWorkflowError(RuntimeError):
     """Raised when an editorial workflow transition is invalid."""
 
 
-class ArticleResolutionRateLimited(ChannelWorkflowError):
-    """Raised when Google News continues rate limiting article-link resolution."""
+DEFAULT_PUBLISHER_FEEDS = (
+    ("BBC India", "https://feeds.bbci.co.uk/news/world/asia/india/rss.xml"),
+    ("The Hindu", "https://www.thehindu.com/feeder/default.rss"),
+    ("Indian Express", "https://indianexpress.com/feed/"),
+    ("Business Standard", "https://www.business-standard.com/rss/home_page_top_stories.rss"),
+    ("Guardian World", "https://www.theguardian.com/world/rss"),
+    ("NPR", "https://feeds.npr.org/1001/rss.xml"),
+)
+
+GDELT_DOC_ENDPOINT = "https://api.gdeltproject.org/api/v2/doc/doc"
 
 
 @dataclass
@@ -79,13 +84,6 @@ class TopicCandidate:
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
-
-def _transport(url: str) -> str:
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=25) as response:
-        if getattr(response, "status", 200) != 200:
-            raise ChannelWorkflowError(f"RSS request returned HTTP {response.status}")
-        return response.read().decode("utf-8", errors="replace")
 
 
 def _tokens(text: str) -> set[str]:
@@ -143,104 +141,83 @@ def _score_candidate(candidate: TopicCandidate, now: datetime) -> None:
     )
 
 
-def _resolve_article_url(url: str) -> str:
-    """Resolve a Google News redirect safely, with bounded 429/503 backoff."""
+def _valid_publisher_url(url: str) -> bool:
     from ai_video_factory.research_pipeline import _is_blocked_host
 
-    def validate(candidate: str) -> None:
-        parsed = urlsplit(candidate)
-        if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-            raise ChannelWorkflowError("article link must resolve to a credential-free HTTPS URL")
-        if _is_blocked_host(parsed.hostname):
-            raise ChannelWorkflowError("article link resolved to a blocked or private host")
-
-    class SafeRedirects(HTTPRedirectHandler):
-        def redirect_request(self, req, fp, code, msg, headers, newurl):
-            destination = urljoin(req.full_url, newurl)
-            validate(destination)
-            return super().redirect_request(req, fp, code, msg, headers, destination)
-
-    def retry_delay(error: HTTPError, retry_number: int) -> float:
-        retry_after = error.headers.get("Retry-After") if error.headers else None
-        if retry_after:
-            try:
-                return min(10.0, max(0.0, float(retry_after)))
-            except ValueError:
-                try:
-                    return min(10.0, max(0.0, (parsedate_to_datetime(retry_after) - datetime.now(UTC)).total_seconds()))
-                except (TypeError, ValueError, OverflowError):
-                    pass
-        return min(4.0, 0.5 * (2 ** retry_number))
-
-    validate(url)
-    for attempt in range(3):
-        opener = build_opener(SafeRedirects())
-        request = Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
-        try:
-            try:
-                with opener.open(request, timeout=12) as response:
-                    resolved = response.geturl()
-            except HTTPError as error:
-                if error.code in {429, 503}:
-                    if attempt == 2:
-                        raise ArticleResolutionRateLimited(
-                            f"Google News rate limit persisted after {attempt + 1} attempts (HTTP {error.code})"
-                        ) from error
-                    time.sleep(retry_delay(error, attempt))
-                    continue
-                if error.code not in {405, 501}:
-                    raise ChannelWorkflowError(f"could not resolve article link (HTTP {error.code})") from error
-                request = Request(url, headers={"User-Agent": USER_AGENT, "Range": "bytes=0-0"})
-                with opener.open(request, timeout=12) as response:
-                    resolved = response.geturl()
-            validate(resolved)
-            host = (urlsplit(resolved).hostname or "").lower()
-            if host == "news.google.com" or host.endswith(".news.google.com"):
-                raise ChannelWorkflowError("Google News did not resolve to the publisher article")
-            return resolved
-        except ArticleResolutionRateLimited:
-            raise
-    raise ArticleResolutionRateLimited("Google News rate limit prevented article URL resolution")
-
-
-FEED_EDITIONS = (
-    ("en-IN", "IN", "IN:en"),
-    ("en-GB", "GB", "GB:en"),
-    ("en-US", "US", "US:en"),
-)
-
-
-def _read_feed(
-    query: str,
-    transport: Transport,
-    edition: tuple[str, str, str] = ("en-IN", "IN", "IN:en"),
-) -> list[dict[str, str]]:
-    hl, gl, ceid = edition
-    params = urllib.parse.urlencode({"q": query, "hl": hl, "gl": gl, "ceid": ceid})
-    url = f"https://news.google.com/rss/search?{params}"
     try:
-        root = ET.fromstring(transport(url))
-    except Exception as error:
-        raise ChannelWorkflowError(
-            f"could not parse RSS results for {query!r} ({gl} edition): {error}"
-        ) from error
-    rows = []
+        parsed = urlsplit(url)
+        return (
+            parsed.scheme == "https"
+            and bool(parsed.hostname)
+            and not parsed.username
+            and not parsed.password
+            and not _is_blocked_host(parsed.hostname)
+        )
+    except ValueError:
+        return False
+
+
+def _parse_publisher_rss(
+    xml_text: str, publisher: str, query: str
+) -> list[dict[str, str]]:
+    root = ET.fromstring(xml_text)
+    rows: list[dict[str, str]] = []
     for item in root.findall(".//item"):
         title = (item.findtext("title") or "").strip()
         link = (item.findtext("link") or "").strip()
         description = (item.findtext("description") or "").strip()
-        pub_date = (item.findtext("pubDate") or "").strip() or None
-        source_node = item.find("source")
-        publisher = (source_node.text or "").strip() if source_node is not None else ""
-        if title and link:
+        pub_date = (item.findtext("pubDate") or "").strip()
+        if title and link and _valid_publisher_url(link):
             rows.append({
                 "title": title,
                 "url": link,
                 "summary": re.sub(r"<[^>]+>", " ", description).strip(),
-                "published_at": pub_date or "",
-                "publisher": publisher or "Unknown publisher",
+                "published_at": pub_date,
+                "publisher": publisher,
                 "query": query,
             })
+    return rows
+
+
+def _read_gdelt(
+    queries: list[str], transport: Transport
+) -> list[dict[str, str]]:
+    # One combined request respects GDELT DOC's request cadence while retaining
+    # the channel's broad topic coverage. Search results are discovery leads.
+    terms = sorted({term for query in queries for term in re.findall(r"[A-Za-z0-9]+", query)})
+    query = "(" + " OR ".join(f'"{term}"' for term in terms) + ")"
+    params = urllib.parse.urlencode({
+        "query": query,
+        "mode": "ArtList",
+        "format": "json",
+        "maxrecords": "250",
+        "timespan": "24h",
+        "sort": "DateDesc",
+    })
+    payload = json.loads(transport(f"{GDELT_DOC_ENDPOINT}?{params}"))
+    articles = payload.get("articles", []) if isinstance(payload, dict) else []
+    rows: list[dict[str, str]] = []
+    for article in articles:
+        title = str(article.get("title") or "").strip()
+        url = str(article.get("url") or "").strip()
+        if not title or not _valid_publisher_url(url):
+            continue
+        seen = str(article.get("seendate") or "")
+        published = ""
+        if re.fullmatch(r"\d{14}", seen):
+            try:
+                published = datetime.strptime(seen, "%Y%m%d%H%M%S").replace(tzinfo=UTC).strftime("%a, %d %b %Y %H:%M:%S GMT")
+            except ValueError:
+                pass
+        domain = str(article.get("domain") or urlsplit(url).hostname or "Unknown publisher")
+        rows.append({
+            "title": title,
+            "url": url,
+            "summary": "",
+            "published_at": published,
+            "publisher": domain,
+            "query": "GDELT: " + "; ".join(queries),
+        })
     return rows
 
 
@@ -255,44 +232,52 @@ def scout_topics(
     diagnostics: dict[str, Any] | None = None,
     max_resolution_attempts: int = 80,
 ) -> list[TopicCandidate]:
-    """Discover and rank political/economic/societal topics from public RSS.
+    """Discover topics from GDELT DOC (24h) and direct publisher RSS.
 
-    RSS headlines are leads, not verified facts. No LLM or paid API is called.
+    All returned links are original HTTPS publisher URLs. Headlines are leads,
+    not verified facts. No paid API or redirect-resolution service is used.
     """
     if limit < 1:
         raise ValueError("limit must be at least 1")
-    if max_resolution_attempts < 1:
-        raise ValueError("max_resolution_attempts must be at least 1")
     queries = queries or DEFAULT_QUERIES
     transport = transport or _transport
-    resolver = resolver or _resolve_article_url
     now = now or datetime.now(UTC)
     if now.tzinfo is None:
         now = now.replace(tzinfo=UTC)
 
     rows: list[dict[str, str]] = []
     failures: list[str] = []
-    # Run India and international editions concurrently so daily scouting stays bounded.
-    with ThreadPoolExecutor(max_workers=min(8, max(1, len(queries) * len(FEED_EDITIONS)))) as pool:
+    try:
+        rows.extend(_read_gdelt(queries, transport))
+    except Exception as error:
+        failures.append(f"GDELT DOC: {type(error).__name__}: {str(error)[:240]}")
+
+    # Publisher RSS is deliberately independent of GDELT, so one provider
+    # outage does not make the entire scout unavailable.
+    with ThreadPoolExecutor(max_workers=min(6, len(DEFAULT_PUBLISHER_FEEDS))) as pool:
         futures = {
-            pool.submit(_read_feed, query, transport, edition): (query, edition)
-            for query in queries
-            for edition in FEED_EDITIONS
+            pool.submit(transport, url): (publisher, url)
+            for publisher, url in DEFAULT_PUBLISHER_FEEDS
         }
         for future in as_completed(futures):
+            publisher, url = futures[future]
             try:
-                rows.extend(future.result())
+                rows.extend(_parse_publisher_rss(future.result(), publisher, publisher))
             except Exception as error:
-                failures.append(str(error))
+                failures.append(f"{publisher} RSS: {type(error).__name__}: {str(error)[:240]}")
+
     if diagnostics is not None:
         diagnostics.update({
-            "queries_requested": len(queries) * len(FEED_EDITIONS),
+            "providers": ["GDELT DOC", "direct publisher RSS"],
+            "queries_requested": 1 + len(DEFAULT_PUBLISHER_FEEDS),
             "feed_failures": len(failures),
-            "feed_failure_samples": failures[:5],
+            "feed_failure_samples": failures[:8],
             "rss_headlines": len(rows),
+            "gdelt_window": "24h",
+            "article_url_resolution_attempts": 0,
         })
     if not rows and failures:
-        raise ChannelWorkflowError("all topic RSS queries failed: " + "; ".join(failures))
+        raise ChannelWorkflowError("all topic discovery providers failed: " + "; ".join(failures))
 
     clusters: list[TopicCandidate] = []
     for row in rows:
@@ -322,60 +307,26 @@ def scout_topics(
     clusters_before_ledger = len(clusters)
     for candidate in clusters:
         _score_candidate(candidate, now)
-
     if ledger_path:
         ledger = TopicLedger(ledger_path)
-        clusters = [
-            c for c in clusters
-            if not ledger.is_duplicate("politics-of-everything", c.title)
-        ]
+        clusters = [c for c in clusters if not ledger.is_duplicate("politics-of-everything", c.title)]
     clusters_after_ledger = len(clusters)
     clusters.sort(key=lambda c: (c.score, c.source_diversity, c.recency), reverse=True)
-    resolved: list[TopicCandidate] = []
-    resolver_failures: list[str] = []
-    resolver_attempts = 0
-    resolution_limit_reached = False
-    rate_limited = False
-    for candidate in clusters:
-        direct_urls: list[str] = []
-        # Resolve sequentially; parallel redirect bursts triggered Google News HTTP 429s.
-        for article_url in candidate.article_urls[:4]:
-            if resolver_attempts >= max_resolution_attempts:
-                resolution_limit_reached = True
-                break
-            resolver_attempts += 1
-            try:
-                direct_url = resolver(article_url)
-                if direct_url not in direct_urls:
-                    direct_urls.append(direct_url)
-            except ArticleResolutionRateLimited as error:
-                parsed_host = urlsplit(article_url).hostname or "unknown host"
-                resolver_failures.append(f"{parsed_host}: {type(error).__name__}: {str(error)[:240]}")
-                rate_limited = True
-                break
-            except Exception as error:
-                parsed_host = urlsplit(article_url).hostname or "unknown host"
-                resolver_failures.append(f"{parsed_host}: {type(error).__name__}: {str(error)[:240]}")
-        if direct_urls:
-            candidate.article_urls = direct_urls
-            candidate.url = direct_urls[0]
-            resolved.append(candidate)
-        if rate_limited or resolution_limit_reached or len(resolved) >= limit:
-            break
+    selected = clusters[:limit]
     if diagnostics is not None:
         diagnostics.update({
             "clusters_before_ledger": clusters_before_ledger,
             "duplicates_filtered": clusters_before_ledger - clusters_after_ledger,
             "clusters_after_ledger": clusters_after_ledger,
-            "resolver_attempts": resolver_attempts,
-            "resolver_failures": len(resolver_failures),
-            "resolver_failure_samples": resolver_failures[:10],
-            "resolved_candidates": len(resolved),
-            "resolution_attempt_limit": max_resolution_attempts,
-            "resolution_attempt_limit_reached": resolution_limit_reached,
-            "resolution_stopped_for_rate_limit": rate_limited,
+            "resolver_attempts": 0,
+            "resolver_failures": 0,
+            "resolver_failure_samples": [],
+            "resolved_candidates": len(selected),
+            "resolution_attempt_limit": 0,
+            "resolution_attempt_limit_reached": False,
+            "resolution_stopped_for_rate_limit": False,
         })
-    return resolved
+    return selected
 
 
 def save_scout_report(
