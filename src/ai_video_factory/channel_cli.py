@@ -129,8 +129,19 @@ def _research_project(project_id: str, model_id: str) -> dict:
         raise ChannelWorkflowError(f"{project_id}: research requires topic_approved, got {record['stage']}")
     candidate = record["topic"]
     urls = list(dict.fromkeys(candidate.get("article_urls") or [candidate["url"]]))
-    publisher_hosts = {domain for url in urls if (domain := _publisher_domain(url))}
-    if len(publisher_hosts) < 2:
+    # Research one source per independent publisher. The first source from each
+    # publisher is the strongest diversity set; extra same-publisher URLs add latency
+    # without increasing the independent corroboration count.
+    research_urls: list[str] = []
+    seen_publishers: set[str] = set()
+    for url in urls:
+        domain = _publisher_domain(url)
+        if domain and domain not in seen_publishers:
+            research_urls.append(url)
+            seen_publishers.add(domain)
+        if len(research_urls) >= 4:
+            break
+    if len(research_urls) < 2:
         raise ChannelWorkflowError("research requires at least two independent publisher domains")
     from ai_video_factory.research_pipeline import (
         make_production_extractor,
@@ -141,11 +152,16 @@ def _research_project(project_id: str, model_id: str) -> dict:
     )
     inference = tomllib.loads((ROOT / "config" / "inference.toml").read_text(encoding="utf-8"))
     endpoint = inference["base_url"].rstrip("/") + "/chat/completions"
-    extractor = make_production_extractor(endpoint_url=endpoint, model_name=model_id)
+    extractor = make_production_extractor(
+        endpoint_url=endpoint, model_name=model_id, timeout_seconds=30, max_attempts=2
+    )
     result = run_research(
-        candidate["title"], urls[:8],
+        candidate["title"], research_urls,
         production_extractor=extractor,
         content_fetcher=make_secure_http_transport(),
+        # Only explicit per-source failures may be skipped; the research gate still
+        # requires independently corroborated facts from the retained sources.
+        droppable_urls=frozenset(research_urls),
     )
     if not result.verified_facts:
         raise ChannelWorkflowError("research produced no independently corroborated verified facts; project remains paused")
