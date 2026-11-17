@@ -254,7 +254,7 @@ def scout_topics(
 
     # Publisher RSS is deliberately independent of GDELT, so one provider
     # outage does not make the entire scout unavailable.
-    with ThreadPoolExecutor(max_workers=min(6, len(DEFAULT_PUBLISHER_FEEDS))) as pool:
+    with ThreadPoolExecutor(max_workers=max(1, min(6, len(DEFAULT_PUBLISHER_FEEDS)))) as pool:
         futures = {
             pool.submit(transport, url): (publisher, url)
             for publisher, url in DEFAULT_PUBLISHER_FEEDS
