@@ -202,7 +202,7 @@ minimum_reliable_domains = 2
     candidates = [
         TopicCandidate(
             candidate_id="lead111",
-            title="Democracy and institutional checks",
+            title="Democracy and accountability through institutional checks",
             summary="A report on democratic institutions and power.",
             url="https://www.reuters.com/world/example",
             article_urls=[
