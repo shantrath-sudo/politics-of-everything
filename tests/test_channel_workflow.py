@@ -164,6 +164,8 @@ def test_scout_queries_both_india_and_international_editions():
     assert candidates
     assert any("api.gdeltproject.org/api/v2/doc/doc" in url for url in requested)
     assert any("feeds.bbci.co.uk" in url for url in requested)
+    assert any("pib.gov.in/RssMain.aspx" in url for url in requested)
+    assert not any("indianexpress.com" in url for url in requested)
     assert not any("news.google.com" in url for url in requested)
 
 def test_scout_reports_feed_and_article_resolution_diagnostics():
@@ -408,3 +410,19 @@ def test_generic_state_and_law_words_do_not_exempt_sports_noise():
     # Generic uses of "state" and "law" in a crime brief are not enough
     # to turn an unrelated sports story into a political documentary lead.
     assert candidate.score < 1.0
+
+
+
+def test_official_government_feed_does_not_inflate_independent_source_diversity():
+    from ai_video_factory.channel_workflow import _score_candidate
+
+    candidate = TopicCandidate(
+        candidate_id="gov01",
+        title="Government announces constitutional reform policy",
+        summary="",
+        url="https://pib.gov.in/story",
+        publishers=["PIB (Government of India)", "Publisher One"],
+        published_at="Tue, 17 Nov 2026 11:00:00 GMT",
+    )
+    _score_candidate(candidate, datetime(2026, 11, 17, 12, tzinfo=UTC))
+    assert candidate.source_diversity == 1.5
