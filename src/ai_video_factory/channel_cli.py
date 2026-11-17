@@ -336,7 +336,11 @@ def start_pilot() -> None:
 
         queries = list(config["research_queries"])
         topic_terms = [term.lower() for term in config.get("topic_terms", [])]
-        candidates, failures = scout_topics(queries, limit=12)
+        discovery_diagnostics: dict[str, Any] = {}
+        candidates = scout_topics(
+            queries=queries, limit=12, diagnostics=discovery_diagnostics
+        )
+        failures = discovery_diagnostics.get("feed_failure_samples", [])
         matched = [
             item for item in candidates
             if any(term in f"{item.title} {item.summary}".lower() for term in topic_terms)
