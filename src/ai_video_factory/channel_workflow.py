@@ -223,6 +223,7 @@ def scout_topics(
     limit: int = 20,
     ledger_path: Path | None = None,
     resolver: Callable[[str], str] | None = None,
+    diagnostics: dict[str, Any] | None = None,
 ) -> list[TopicCandidate]:
     """Discover and rank political/economic/societal topics from public RSS.
 
@@ -251,6 +252,13 @@ def scout_topics(
                 rows.extend(future.result())
             except Exception as error:
                 failures.append(str(error))
+    if diagnostics is not None:
+        diagnostics.update({
+            "queries_requested": len(queries) * len(FEED_EDITIONS),
+            "feed_failures": len(failures),
+            "feed_failure_samples": failures[:5],
+            "rss_headlines": len(rows),
+        })
     if not rows and failures:
         raise ChannelWorkflowError("all topic RSS queries failed: " + "; ".join(failures))
 
@@ -279,6 +287,7 @@ def scout_topics(
             article_urls=[row["url"]],
         ))
 
+    clusters_before_ledger = len(clusters)
     for candidate in clusters:
         _score_candidate(candidate, now)
 
@@ -288,10 +297,14 @@ def scout_topics(
             c for c in clusters
             if not ledger.is_duplicate("politics-of-everything", c.title)
         ]
+    clusters_after_ledger = len(clusters)
     clusters.sort(key=lambda c: (c.score, c.source_diversity, c.recency), reverse=True)
     resolved: list[TopicCandidate] = []
+    resolver_failures: list[str] = []
+    resolver_attempts = 0
     for candidate in clusters:
         article_urls = candidate.article_urls[:4]
+        resolver_attempts += len(article_urls)
         direct_by_index: dict[int, str] = {}
         with ThreadPoolExecutor(max_workers=min(8, max(1, len(article_urls)))) as pool:
             futures = {
@@ -301,8 +314,11 @@ def scout_topics(
             for future in as_completed(futures):
                 try:
                     direct_by_index[futures[future]] = future.result()
-                except Exception:
-                    continue
+                except Exception as error:
+                    parsed_host = (urlsplit(article_urls[futures[future]]).hostname or "unknown host")
+                    resolver_failures.append(
+                        f"{parsed_host}: {type(error).__name__}: {str(error)[:240]}"
+                    )
         direct_urls = list(dict.fromkeys(
             direct_by_index[index]
             for index in sorted(direct_by_index)
@@ -314,10 +330,26 @@ def scout_topics(
         resolved.append(candidate)
         if len(resolved) >= limit:
             break
+    if diagnostics is not None:
+        diagnostics.update({
+            "clusters_before_ledger": clusters_before_ledger,
+            "duplicates_filtered": clusters_before_ledger - clusters_after_ledger,
+            "clusters_after_ledger": clusters_after_ledger,
+            "resolver_attempts": resolver_attempts,
+            "resolver_failures": len(resolver_failures),
+            "resolver_failure_samples": resolver_failures[:10],
+            "resolved_candidates": len(resolved),
+        })
     return resolved
 
 
-def save_scout_report(candidates: list[TopicCandidate], output_dir: Path, *, on_date: date | None = None) -> Path:
+def save_scout_report(
+    candidates: list[TopicCandidate],
+    output_dir: Path,
+    *,
+    on_date: date | None = None,
+    diagnostics: dict[str, Any] | None = None,
+) -> Path:
     output_dir = Path(output_dir)
     report_date = on_date or datetime.now().date()
     destination = output_dir / "scouting" / f"{report_date.isoformat()}.json"
@@ -327,6 +359,7 @@ def save_scout_report(candidates: list[TopicCandidate], output_dir: Path, *, on_
         "generated_at": datetime.now(UTC).isoformat(),
         "disclaimer": "Discovery signals only. Headlines are leads, not verified facts or editorial approval.",
         "candidate_count": len(candidates),
+        "diagnostics": diagnostics or {},
         "candidates": [candidate.to_dict() for candidate in candidates],
     }
     destination.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -338,8 +371,26 @@ def save_scout_report(candidates: list[TopicCandidate], output_dir: Path, *, on_
         "> Discovery signals only. Headlines are leads, not verified facts or editorial approval.",
         "",
     ]
+    if diagnostics:
+        lines.extend([
+            "## Discovery diagnostics",
+            "",
+            f"- RSS headlines received: {diagnostics.get('rss_headlines', 0)}",
+            f"- Feed requests failed: {diagnostics.get('feed_failures', 0)} of {diagnostics.get('queries_requested', 0)}",
+            f"- Unique headline clusters: {diagnostics.get('clusters_before_ledger', 0)}",
+            f"- Previously covered topics filtered: {diagnostics.get('duplicates_filtered', 0)}",
+            f"- Article URL resolution attempts: {diagnostics.get('resolver_attempts', 0)}",
+            f"- Article URL resolution failures: {diagnostics.get('resolver_failures', 0)}",
+            f"- Candidates with resolved publisher URLs: {diagnostics.get('resolved_candidates', 0)}",
+            "",
+        ])
+        for failure in diagnostics.get("feed_failure_samples", []):
+            lines.append(f"- Feed error: {failure}")
+        for failure in diagnostics.get("resolver_failure_samples", []):
+            lines.append(f"- URL resolution error: {failure}")
+        lines.append("")
     if not candidates:
-        lines.extend(["No candidates passed the current topic and source filters.", ""])
+        lines.extend(["No candidates passed the current topic and source filters. See discovery diagnostics above for the stage that produced zero candidates.", ""])
     for index, candidate in enumerate(candidates, 1):
         lines.extend([
             f"## {index}. {candidate.title}",
