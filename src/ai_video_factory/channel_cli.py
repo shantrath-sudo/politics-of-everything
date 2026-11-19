@@ -144,16 +144,18 @@ def _research_project(project_id: str, model_id: str) -> dict:
     if len(research_urls) < 2:
         raise ChannelWorkflowError("research requires at least two independent publisher domains")
     from ai_video_factory.research_pipeline import (
-        make_production_extractor,
+        make_deterministic_production_extractor,
         make_secure_http_transport,
         run_research,
         write_research_artifacts,
         flag_sensitive_topic,
     )
-    inference = tomllib.loads((ROOT / "config" / "inference.toml").read_text(encoding="utf-8"))
-    endpoint = inference["base_url"].rstrip("/") + "/chat/completions"
-    extractor = make_production_extractor(
-        endpoint_url=endpoint, model_name=model_id, timeout_seconds=30, max_attempts=2
+    # Research extraction is intentionally deterministic and source-verbatim.
+    # Local model inference is reserved for later creative stages (script drafting),
+    # avoiding repeated per-source timeouts while keeping claims auditable.
+    extractor = make_deterministic_production_extractor(
+        extractor_name="deterministic-grounded-research",
+        extractor_version="1.1",
     )
     result = run_research(
         candidate["title"], research_urls,
